@@ -1,23 +1,22 @@
 import torch
 from torch.utils.data.dataset import Dataset
+import torch.nn.functional as F
 
 class Dataset(torch.utils.data.Dataset):
-      def __init__(self, aFile, bFile,cFile,dFile):
-            a = torch.load(aFile)
-            b = torch.load(bFile)
-            c = torch.load(cFile)
-            d = torch.load(dFile)
-            self.data = torch.cat((a,b,c,d))
-            #target 0, nontarget 1
-            #self.label = torch.cat((torch.zeros(z.shape[0]), torch.ones(h.shape[0]))) #human: 1, others: 0
-            #Target: 0, nontarget: 1,2,3
-            self.label = torch.cat((torch.zeros(a.shape[0]),torch.ones(b.shape[0]),torch.ones(c.shape[0])*2,torch.ones(d.shape[0])*3))
-        
+  def __init__(self, pFile, nFile):
+        p = torch.load(pFile)
+        n = torch.load(nFile)
+        self.data = torch.cat((p, n)).to(torch.float)
+        #target 0, nontarget 1
+        p_labels = torch.zeros(p.shape[0])
+        n_labels = torch.ones(n.shape[0])
+        labels = torch.tensor(torch.cat((p_labels,n_labels),dim=0)).to(torch.int64)
+        self.label = F.one_hot(labels,num_classes=2).to(torch.float32)
 
-      def __len__(self):
-            return len(self.label)
-      
-      def __getitem__(self, index):
-            X = self.data[index]
-            y = self.label[index]
-            return X, y
+  def __len__(self):
+        return len(self.label)
+
+  def __getitem__(self, index):
+        X = self.data[index]
+        y = self.label[index]
+        return X, y

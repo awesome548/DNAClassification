@@ -1,20 +1,13 @@
 from pyexpat import model
 from sentry_sdk import configure_scope
-from torch.autograd import Variable
 import torch
 import torch.nn as nn
-from torch.optim import SGD, Adam
-import math
-import numpy as np
 from dataset import Dataset
 import click
 from torch.utils.data import DataLoader
 import torch.nn as nn
-import wandb
-import os
-import torch.nn.functional as F
+from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
 import pytorch_lightning as pl
 from model import LstmEncoder
 from pytorch_lightning import loggers as pl_loggers
@@ -22,17 +15,20 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self,train,val, batch_size: int):
+    def __init__(self,train,val,test, batch_size: int):
         super().__init__()
         self.train_datasets = train
         self.val_datasets = val
-        # self.test_datasets = test   
+        self.test_datasets = test
         self.batch_size = batch_size
     
     def train_dataloader(self):
         return DataLoader(self.train_datasets,batch_size=self.batch_size,shuffle=True,num_workers=24)
 
     def val_dataloader(self):
+        return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
+
+    def test_dataloader(self):
         return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
 
     # def test_dataloader(self):
@@ -43,18 +39,22 @@ class DataModule(pl.LightningDataModule):
 @click.option('--pVal', '-pv', help='The path of positive sequence validation set', type=click.Path(exists=True))
 @click.option('--nTrain', '-nt', help='The path of negative sequence training set', type=click.Path(exists=True))
 @click.option('--nVal', '-nv', help='The path of negative sequence validation set', type=click.Path(exists=True))
+@click.option('--pTest', '-ptt', help='The path of positive sequence training set', type=click.Path(exists=True))
+@click.option('--nTest', '-ntt', help='The path of positive sequence validation set', type=click.Path(exists=True))
+
 #@click.option('--outpath', '-o', help='The output path and name for the best trained model')
 #@click.option('--interm', '-i', help='The path and name for model checkpoint (optional)', type=click.Path(exists=True), required=False)
 @click.option('--batch', '-b', default=200, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
 
-def main(ptrain, pval, ntrain, nval, batch, epoch, learningrate):
+def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
 
     #torch setting
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
     
+
     #variable
     input_size = 3000
     hidden_size = 5
@@ -64,11 +64,11 @@ def main(ptrain, pval, ntrain, nval, batch, epoch, learningrate):
     #dataset
     training_set = Dataset(ptrain, ntrain)
     validation_set = Dataset(pval, nval)
-    data_module = DataModule(training_set,validation_set, batch_size=batch)
+    test_set = Dataset(ptest,ntest)
+    data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
 
-    #train
     # define logger
-    tensorbord_logger = pl_loggers.TensorBoardLogger("logs/")
+    wandb_logger = WandbLogger(project="LSTM")
 
     # define callbacks
 
@@ -91,10 +91,14 @@ def main(ptrain, pval, ntrain, nval, batch, epoch, learningrate):
         max_epochs=epoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
-        logger=[tensorbord_logger],
+        logger=wandb_logger,
         callbacks=[model_checkpoint,early_stopping],
     )
     trainer.fit(
+        model,
+        datamodule=data_module,
+    )
+    trainer.test(
         model,
         datamodule=data_module,
     )

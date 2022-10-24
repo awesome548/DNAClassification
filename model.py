@@ -1,3 +1,4 @@
+from unicodedata import bidirectional
 import torch.nn as nn
 import pytorch_lightning as pl
 from torch.optim import SGD, Adam
@@ -56,7 +57,7 @@ def part_metrics(
 ### CREATE MODEL ###
 class LstmEncoder(pl.LightningModule):
 
-    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes):
+    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirectional):
         super(LstmEncoder,self).__init__()
 
         self.lr = lr
@@ -66,8 +67,13 @@ class LstmEncoder(pl.LightningModule):
         #Model Architecture
         self.lstm = nn.LSTM(input_size = inputDim,
                             hidden_size = hiddenDim,
-                            batch_first = True)
-        self.label = nn.Linear(hiddenDim, outputDim)
+                            batch_first = True,
+                            bidirectional = bidirectional
+                            )
+        if bidirectional:
+            self.label = nn.Linear(hiddenDim*2, outputDim)
+        else:
+            self.label = nn.Linear(hiddenDim,outputDim)
         self.train_metrics = part_metrics(
             num_classes=classes,
             prefix="train_",

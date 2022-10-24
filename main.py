@@ -1,4 +1,5 @@
 from pyexpat import model
+from unicodedata import bidirectional
 from sentry_sdk import configure_scope
 import torch
 from dataset import Dataset
@@ -40,6 +41,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     lr = learningrate
     size = (input_length,input_size)
     num_classes = 2
+    bidirectional = True
 
     #dataset
     training_set = Dataset(ptrain, ntrain,size)
@@ -66,7 +68,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     )
 
     ### TRAINING ###
-    model = LstmEncoder(input_size,output_size,hidden_size,lr,num_classes)
+    model = LstmEncoder(input_size,output_size,hidden_size,lr,num_classes,bidirectional)
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator="gpu",

@@ -1,39 +1,16 @@
 from pyexpat import model
 from sentry_sdk import configure_scope
 import torch
-import torch.nn as nn
 from dataset import Dataset
 import click
-from torch.utils.data import DataLoader
-import torch.nn as nn
 from pytorch_lightning.loggers import WandbLogger
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import  random_split
 import pytorch_lightning as pl
 from model import LstmEncoder
-from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from datamodule import DataModule
 
-class DataModule(pl.LightningDataModule):
-    def __init__(self,train,val,test, batch_size: int):
-        super().__init__()
-        self.train_datasets = train
-        self.val_datasets = val
-        self.test_datasets = test
-        self.batch_size = batch_size
-    
-    def train_dataloader(self):
-        return DataLoader(self.train_datasets,batch_size=self.batch_size,shuffle=True,num_workers=24)
-
-    def val_dataloader(self):
-        return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
-
-    def test_dataloader(self):
-        return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
-
-    # def test_dataloader(self):
-    #     return DataLoader(self.test_dataset,batch_size=self.batch_size)
-        
 @click.command()
 @click.option('--pTrain', '-pt', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--pVal', '-pv', help='The path of positive sequence validation set', type=click.Path(exists=True))
@@ -53,25 +30,27 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     #torch setting
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(device)
-    
 
+    ### PREPARATION ###
     #variable
-    input_size = 3000
+    input_size = 60
+    input_length = 50
     hidden_size = 5
     output_size = 2
     lr = learningrate
+    size = (input_length,input_size)
+    num_classes = 2
 
     #dataset
-    training_set = Dataset(ptrain, ntrain)
-    validation_set = Dataset(pval, nval)
-    test_set = Dataset(ptest,ntest)
+    training_set = Dataset(ptrain, ntrain,size)
+    validation_set = Dataset(pval, nval,size)
+    test_set = Dataset(ptest,ntest,size)
     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
 
     # define logger
-    wandb_logger = WandbLogger(project="LSTM")
+    wandb_logger = WandbLogger(project="LSTMtest")
 
     # define callbacks
-
     model_checkpoint = ModelCheckpoint(
         "logs/",
         filename="{epoch}-{valid_loss:.4f}",
@@ -86,7 +65,8 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
         patience=10,
     )
 
-    model = LstmEncoder(input_size,hidden_size,output_size,lr)
+    ### TRAINING ###
+    model = LstmEncoder(input_size,output_size,hidden_size,lr,num_classes)
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator="gpu",

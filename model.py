@@ -56,7 +56,7 @@ def part_metrics(
 ### CREATE MODEL ###
 class LstmEncoder(pl.LightningModule):
 
-    def __init__(self,inputDim,hiddenDim,outputDim,lr,classes=2):
+    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes):
         super(LstmEncoder,self).__init__()
 
         self.lr = lr
@@ -85,7 +85,7 @@ class LstmEncoder(pl.LightningModule):
     def forward(self, inputs,hidden0=None):
         # in lightning, forward defines the prediction/inference actions
         output, (hidden,cell) = self.lstm(inputs,hidden0)
-        y_hat = self.label(output[:,])
+        y_hat = self.label(output[:,-1,])
         y_hat = y_hat.to(torch.float32)
         return y_hat
 
@@ -105,7 +105,7 @@ class LstmEncoder(pl.LightningModule):
             self.train_metrics,
             prog_bar=True,
             logger=True,
-            on_epoch=True,
+            on_epoch=False,
             on_step=True,            
         )
         return loss
@@ -125,7 +125,7 @@ class LstmEncoder(pl.LightningModule):
             prog_bar=True,
             logger=True,
             on_epoch=True,
-            on_step=True,            
+            on_step=False,            
         )
         return {"valid_loss" : loss}
 

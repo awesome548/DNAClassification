@@ -35,7 +35,8 @@ class CNNDataset(torch.utils.data.Dataset):
             input_dim = size[1]
             p = torch.load(pFile)
             n = torch.load(nFile)
-            self.data = torch.cat((p, n)).to(torch.float)
+            data = torch.cat((p, n)).to(torch.float)
+            self.data = data.view(-1,input_dim,input_length)
             #target 0, nontarget 1
             p_labels = torch.zeros(p.shape[0])
             n_labels = torch.ones(n.shape[0])

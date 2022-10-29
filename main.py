@@ -1,5 +1,6 @@
 from pyexpat import model
 from unicodedata import bidirectional
+from xml.etree.ElementInclude import include
 from sentry_sdk import configure_scope
 import torch
 from dataset import Dataset,CNNDataset
@@ -7,7 +8,7 @@ import click
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import  random_split
 import pytorch_lightning as pl
-from model import LstmEncoder
+from model import LstmEncoder,CNNLstmEncoder
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from datamodule import DataModule
@@ -34,28 +35,33 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
 
     ### PREPARATION ###
     #variable
-    input_dim = 1
-    input_length = 3000
+    input_dim = 3
+    input_length = 1000
     hidden_size = 128
     output_size = 2
     lr = learningrate
     size = (input_length,input_dim)
     num_classes = 2
-    bidirectional = True
+    bidirectional = False
+    includeCNN = False
 
     ### DATASET ###
-
-    #LSTM only
-    training_set = Dataset(ptrain, ntrain,size)
-    validation_set = Dataset(pval, nval,size)
-    test_set = Dataset(ptest,ntest,size)
-    data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-
-    #CNN&LSTM
-    # training_set = CNNDataset(ptrain, ntrain,size)
-    # validation_set = CNNDataset(pval, nval,size)
-    # test_set = CNNDataset(ptest,ntest,size)
-    # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+    if includeCNN:
+        #CNN&LSTM
+        training_set = CNNDataset(ptrain, ntrain,size)
+        validation_set = CNNDataset(pval, nval,size)
+        test_set = CNNDataset(ptest,ntest,size)
+        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+        ### MODEL ###
+        model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
+    else:
+        #LSTM only
+        training_set = Dataset(ptrain, ntrain,size)
+        validation_set = Dataset(pval, nval,size)
+        test_set = Dataset(ptest,ntest,size)
+        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+        ### MODEL ###
+        model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
 
 
     # define logger
@@ -76,16 +82,13 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
         patience=10,
     )
 
-    ### TRAINING ###
-    model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
-        callbacks=[model_checkpoint,early_stopping],
+        callbacks=[early_stopping],
         # callbacks=[model_checkpoint],
-
     )
     trainer.fit(
         model,

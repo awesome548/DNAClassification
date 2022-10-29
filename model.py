@@ -56,7 +56,6 @@ def part_metrics(
 
 ### CREATE MODEL ###
 class LstmEncoder(pl.LightningModule):
-
     def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect):
         super(LstmEncoder,self).__init__()
 
@@ -172,30 +171,41 @@ class LstmEncoder(pl.LightningModule):
 class CNNLstmEncoder(pl.LightningModule):
 
     def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect):
-        super(LstmEncoder,self).__init__()
+        super(CNNLstmEncoder,self).__init__()
+
+        #kernel -> samples/base *2 
+        #stride -> samples/base 
+        conv_padd = 5
+        conv_ker = 19
+        conv_str = 3
+
+        pool_padd = 0
+        pool_str = 2
+        pool_ker = 2
 
         self.lr = lr
         self.classes = classes
         self.loss_fn = nn.MSELoss()
 
         self.convDim = 20
-        self.lengh = 3000/inputDim
+        convLen = ((3000+2*conv_padd-conv_ker)/conv_str) + 1
+        self.poolLen = int(((convLen + 2*pool_padd - pool_ker) / pool_str) + 1)
         #Model Architecture
         self.conv = nn.Sequential(
-            nn.Conv1d(inputDim, self.convDim, 19, padding=0, stride=3),
+            nn.Conv1d(inputDim, self.convDim,kernel_size=conv_ker, padding=conv_padd, stride=conv_str),
             nn.ReLU(),
-            nn.MaxPool1d(2, padding=1, stride=2),
+            nn.MaxPool1d(kernel_size=pool_ker, padding=pool_padd, stride=pool_str),
         )
         #Model Architecture
         if bidirect:
-            self.lstm = nn.LSTM(input_size = inputDim,
+            self.lstm = nn.LSTM(input_size = self.poolLen,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = True,
                             )
             self.label = nn.Linear(hiddenDim*2, outputDim)
         else:
-            self.lstm = nn.LSTM(input_size = inputDim,
+            self.lstm = nn.LSTM(input_size = self.poolLen,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             )
@@ -219,7 +229,6 @@ class CNNLstmEncoder(pl.LightningModule):
     def forward(self, inputs,hidden0=None):
         # in lightning, forward defines the prediction/inference actions
         x = self.conv(inputs)
-        x.view(-1,self.lengh,self.convDim)
         output, (hidden,cell) = self.lstm(x,hidden0)
         y_hat = self.label(output[:,-1,])
         y_hat = y_hat.to(torch.float32)

@@ -64,8 +64,14 @@ class LstmEncoder(pl.LightningModule):
         self.classes = classes
         self.loss_fn = nn.MSELoss()
 
+        convDim = 20
         #Model Architecture
-        self.lstm = nn.LSTM(input_size = inputDim,
+        self.conv = nn.Sequential(
+            nn.Conv1d(inputDim, convDim, 19, padding=5, stride=3),
+            nn.ReLU(),
+            nn.MaxPool1d(2, padding=1, stride=2),
+        )
+        self.lstm = nn.LSTM(input_size = convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = bidirectional
@@ -90,7 +96,8 @@ class LstmEncoder(pl.LightningModule):
 
     def forward(self, inputs,hidden0=None):
         # in lightning, forward defines the prediction/inference actions
-        output, (hidden,cell) = self.lstm(inputs,hidden0)
+        x = self.conv(inputs)
+        output, (hidden,cell) = self.lstm(x,hidden0)
         y_hat = self.label(output[:,-1,])
         y_hat = y_hat.to(torch.float32)
         return y_hat
@@ -137,6 +144,7 @@ class LstmEncoder(pl.LightningModule):
 
     def validation_end(self, outputs):
         avg_loss = torch.stack([x["valid_loss"] for x in outputs]).mean()
+        self.log("avg_val__loss",avg_loss)
         return {"avg_val_loss": avg_loss}
 
     def test_step(self, batch, batch_idx):
@@ -158,8 +166,10 @@ class LstmEncoder(pl.LightningModule):
         return {"test_loss" : loss}
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(
+        optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.lr,
             )
         return optimizer
+
+

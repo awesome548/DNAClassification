@@ -33,9 +33,9 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
 
     ### PREPARATION ###
     #variable
-    input_size = 60
-    input_length = 50
-    hidden_size = 5
+    input_size = 1
+    input_length = 3000
+    hidden_size = 128
     output_size = 2
     lr = learningrate
     size = (input_length,input_size)
@@ -48,9 +48,9 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
 
     # define logger
-    wandb_logger = WandbLogger(project="LSTMtest")
+    wandb_logger = WandbLogger(project="LSTM&CNNcompare")
 
-    # define callbacks
+    # refine callbacks
     model_checkpoint = ModelCheckpoint(
         "logs/",
         filename="{epoch}-{valid_loss:.4f}",
@@ -73,6 +73,8 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
         callbacks=[model_checkpoint,early_stopping],
+        # callbacks=[model_checkpoint],
+
     )
     trainer.fit(
         model,

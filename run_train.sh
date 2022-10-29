@@ -12,8 +12,6 @@ trainb=$7
 
 epoch=$8
 
-layer="5"
-depth="twice"
 
 IDlist="ID"
 

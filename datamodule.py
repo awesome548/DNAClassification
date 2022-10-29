@@ -17,4 +17,4 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
 
     def test_dataloader(self):
-        return DataLoader(self.val_datasets,batch_size=self.batch_size,num_workers=24)
+        return DataLoader(self.test_datasets,batch_size=self.batch_size,num_workers=24)

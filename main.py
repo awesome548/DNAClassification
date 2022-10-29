@@ -1,7 +1,8 @@
 from pyexpat import model
+from unicodedata import bidirectional
 from sentry_sdk import configure_scope
 import torch
-from dataset import Dataset
+from dataset import Dataset,CNNDataset
 import click
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import  random_split
@@ -16,8 +17,8 @@ from datamodule import DataModule
 @click.option('--pVal', '-pv', help='The path of positive sequence validation set', type=click.Path(exists=True))
 @click.option('--nTrain', '-nt', help='The path of negative sequence training set', type=click.Path(exists=True))
 @click.option('--nVal', '-nv', help='The path of negative sequence validation set', type=click.Path(exists=True))
-@click.option('--pTest', '-ptt', help='The path of positive sequence training set', type=click.Path(exists=True))
-@click.option('--nTest', '-ntt', help='The path of positive sequence validation set', type=click.Path(exists=True))
+@click.option('--pTest', '-ptt', help='The path of positive sequence test set', type=click.Path(exists=True))
+@click.option('--nTest', '-ntt', help='The path of negative sequence test set', type=click.Path(exists=True))
 
 #@click.option('--outpath', '-o', help='The output path and name for the best trained model')
 #@click.option('--interm', '-i', help='The path and name for model checkpoint (optional)', type=click.Path(exists=True), required=False)
@@ -33,19 +34,29 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
 
     ### PREPARATION ###
     #variable
-    input_size = 1
+    input_dim = 1
     input_length = 3000
     hidden_size = 128
     output_size = 2
     lr = learningrate
-    size = (input_length,input_size)
+    size = (input_length,input_dim)
     num_classes = 2
+    bidirectional = True
 
-    #dataset
+    ### DATASET ###
+
+    #LSTM only
     training_set = Dataset(ptrain, ntrain,size)
     validation_set = Dataset(pval, nval,size)
     test_set = Dataset(ptest,ntest,size)
     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+
+    #CNN&LSTM
+    # training_set = CNNDataset(ptrain, ntrain,size)
+    # validation_set = CNNDataset(pval, nval,size)
+    # test_set = CNNDataset(ptest,ntest,size)
+    # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+
 
     # define logger
     wandb_logger = WandbLogger(project="LSTM&CNNcompare")
@@ -66,7 +77,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     )
 
     ### TRAINING ###
-    model = LstmEncoder(input_size,output_size,hidden_size,lr,num_classes)
+    model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
     trainer = pl.Trainer(
         max_epochs=epoch,
         accelerator="gpu",

@@ -304,49 +304,27 @@ class CNNLstmEncoder(pl.LightningModule):
             )
         return optimizer
 
-class Transformer(pl.LightningModule):
+def patchify(inputs,n_patches,batch_size):
+    l = 3000
+    patch_size = l // n_patches
+    patches = torch.zeros(batch_size,n_patches,patch_size)
 
-    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect):
-        super(Transformer,self).__init__()
+    for i in range (n_patches):
+        patches[i] = inputs[i*patch_size:(i+1)*patch_size]
 
-        #kernel -> samples/base *2 
-        #stride -> samples/base 
-        conv_padd = 5
-        conv_ker = 19
-        conv_str = 3
-
-        pool_padd = 0
-        pool_str = 2
-        pool_ker = 2
+class ViTransformer(pl.LightningModule):
+    def __init__(self,length,n_patches=60,hiddenDim=10,lr,classes):
+        super(ViTransformer,self).__init__()
 
         self.lr = lr
         self.classes = classes
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
-        self.convDim = 20
-        convLen = ((3000+2*conv_padd-conv_ker)/conv_str) + 1
-        self.poolLen = int(((convLen + 2*pool_padd - pool_ker) / pool_str) + 1)
+        self.inputDim = 
+        self.n_patches = n_patches
+        self.hiddenDim = hiddenDim 
         #Model Architecture
-        self.conv = nn.Sequential(
-            nn.Conv1d(inputDim, self.convDim,kernel_size=conv_ker, padding=conv_padd, stride=conv_str),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=pool_ker, padding=pool_padd, stride=pool_str),
-        )
-        #Model Architecture
-        if bidirect:
-            self.lstm = nn.LSTM(input_size = self.poolLen,
-                            hidden_size = hiddenDim,
-                            batch_first = True,
-                            bidirectional = True,
-                            )
-            self.label = nn.Linear(hiddenDim*2, outputDim)
-        else:
-            self.lstm = nn.LSTM(input_size = self.poolLen,
-                            hidden_size = hiddenDim,
-                            batch_first = True,
-                            )
-            self.label = nn.Linear(hiddenDim, outputDim)
-        
+        self.linear_mapper = nn.Linear(self.inputDim,self.hiddenDim)
         
         self.train_metrics = part_metrics(
             num_classes=classes,

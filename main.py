@@ -35,15 +35,20 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
 
     ### PREPARATION ###
     #variable
-    input_dim = 3
-    input_length = 1000
+    input_dim = 1
+    input_length = 3000
     hidden_size = 128
     output_size = 2
     lr = learningrate
     size = (input_length,input_dim)
     num_classes = 2
-    bidirectional = False
-    includeCNN = False
+    bidirectional = True 
+    
+    #CNN variable
+    includeCNN = True
+    conv_padd = 5
+    conv_ker = 19
+    conv_str = 3
 
     ### DATASET ###
     if includeCNN:
@@ -53,7 +58,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
         test_set = CNNDataset(ptest,ntest,size)
         data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
         ### MODEL ###
-        model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
+        model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional,padd=conv_padd,ker=conv_ker,stride=conv_str)
     else:
         #LSTM only
         training_set = Dataset(ptrain, ntrain,size)

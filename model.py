@@ -296,3 +296,125 @@ class CNNLstmEncoder(pl.LightningModule):
             lr=self.lr,
             )
         return optimizer
+
+# def patchify(inputs,n_patches,batch_size):
+#     l = 3000
+#     patch_size = l // n_patches
+#     patches = torch.zeros(batch_size,n_patches,patch_size)
+
+#     for i in range (n_patches):
+#         patches[i] = inputs[i*patch_size:(i+1)*patch_size]
+
+class ViTransformer(pl.LightningModule):
+    def __init__(self,length,n_patches,hiddenDim,lr,classes):
+        super(ViTransformer,self).__init__()
+
+        self.lr = lr
+        self.classes = classes
+        self.loss_fn = nn.CrossEntropyLoss()
+
+        self.inputDim = length//n_patches
+        self.n_patches = n_patches
+        self.hiddenDim = hiddenDim 
+        
+        # 1) Linear mapper
+        self.linear_mapper = nn.Linear(self.inputDim,self.hiddenDim)
+
+        # 2) learnable classification token
+        self.class_token = nn.Parameter(torch.rand(1,self.hiddenDim))        
+
+        # Metrics 
+        self.train_metrics = part_metrics(
+            num_classes=classes,
+            prefix="train_",
+        )
+        self.valid_metrics = part_metrics(
+            num_classes=classes,
+            prefix="valid_"
+        )
+        self.test_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="test_"
+        )
+        self.save_hyperparameters()
+
+    def forward(self, inputs,hidden0=None):
+        # in lightning, forward defines the prediction/inference actions
+        inputs.view(-1,self.n_patches,self.inputDim)
+        tokens = self.linear_mapper(inputs)
+
+        #adding classification token to the tokens
+        tokens = torch.stack([torch.vstack(self.class_token, tokens[i]) for i in range(len(tokens))])
+        y_hat = self.label(output[:,-1,])
+        y_hat = y_hat.to(torch.float32)
+        return y_hat
+
+    def training_step(self, batch, batch_idx):
+        # training_step defined the train loop.
+        # It is independent of forward
+        x, y = batch
+        y_hat = self.forward(x)
+        y_hat = y_hat.to(torch.float32)
+        loss = self.loss_fn(y_hat,y)
+
+        # Logging to TensorBoard by default
+        self.log("train_loss",loss)
+        yhat_for_metrics = F.softmax(y_hat,dim=1)
+        self.train_metrics(yhat_for_metrics,y.to(torch.int64))
+        self.log_dict(
+            self.train_metrics,
+            prog_bar=True,
+            logger=True,
+            on_epoch=False,
+            on_step=True,            
+        )
+        return loss
+
+
+    def validation_step(self, batch, batch_idx):
+        # It is independent of forward
+        x, y = batch
+        y_hat = self.forward(x)
+        y_hat = y_hat.to(torch.float32)
+        loss = self.loss_fn(y_hat,y)
+        self.log("valid_loss",loss)
+        yhat_for_metrics = F.softmax(y_hat,dim=1)
+        self.valid_metrics(yhat_for_metrics,y.to(torch.int64))
+        self.log_dict(
+            self.valid_metrics,
+            prog_bar=True,
+            logger=True,
+            on_epoch=True,
+            on_step=False,            
+        )
+        return {"valid_loss" : loss}
+
+    def validation_end(self, outputs):
+        avg_loss = torch.stack([x["valid_loss"] for x in outputs]).mean()
+        self.log("avg_val__loss",avg_loss)
+        return {"avg_val_loss": avg_loss}
+
+    def test_step(self, batch, batch_idx):
+        # It is independent of forward
+        x, y = batch
+        y_hat = self.forward(x)
+        y_hat = y_hat.to(torch.float32)
+        loss = self.loss_fn(y_hat,y)
+        self.log("test_loss",loss)
+        yhat_for_metrics = F.softmax(y_hat,dim=1)
+        self.test_metrics(yhat_for_metrics,y.to(torch.int64))
+        self.log_dict(
+            self.test_metrics,
+            prog_bar=True,
+            logger=True,
+            on_epoch=False,
+            on_step=True,            
+        )
+        return {"test_loss" : loss}
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(
+            self.parameters(),
+            lr=self.lr,
+            )
+        return optimizer

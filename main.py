@@ -8,7 +8,7 @@ import click
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import  random_split
 import pytorch_lightning as pl
-from model import LstmEncoder,CNNLstmEncoder
+from model import LstmEncoder,CNNLstmEncoder,ViTransformer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from datamodule import DataModule
@@ -49,28 +49,36 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate):
     conv_padd = 5
     conv_ker = 19
     conv_str = 3
+    convDim = 10
 
-    ### DATASET ###
-    if includeCNN:
-        #CNN&LSTM
-        training_set = CNNDataset(ptrain, ntrain,size)
-        validation_set = CNNDataset(pval, nval,size)
-        test_set = CNNDataset(ptest,ntest,size)
-        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-        ### MODEL ###
-        model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional,padd=conv_padd,ker=conv_ker,stride=conv_str)
-    else:
-        #LSTM only
-        training_set = Dataset(ptrain, ntrain,size)
-        validation_set = Dataset(pval, nval,size)
-        test_set = Dataset(ptest,ntest,size)
-        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-        ### MODEL ###
-        model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
+    # ### DATASET ###
+    # if includeCNN:
+    #     #CNN&LSTM
+    #     training_set = CNNDataset(ptrain, ntrain,size)
+    #     validation_set = CNNDataset(pval, nval,size)
+    #     test_set = CNNDataset(ptest,ntest,size)
+    #     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+    #     ### MODEL ###
+    #     model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional,padd=conv_padd,ker=conv_ker,stride=conv_str,convDim=convDim)
+    # else:
+    #     #LSTM only
+    #     training_set = Dataset(ptrain, ntrain,size)
+    #     validation_set = Dataset(pval, nval,size)
+    #     test_set = Dataset(ptest,ntest,size)
+    #     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+    #     ### MODEL ###
+    #     model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
+
+
+    training_set = Dataset(ptrain, ntrain,size)
+    validation_set = Dataset(pval, nval,size)
+    test_set = Dataset(ptest,ntest,size)
+    data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+    model = ViTransformer(length=3000,n_patches=60,hiddenDim=10)
 
 
     # define logger
-    wandb_logger = WandbLogger(project="LSTM&CNNcompare")
+    wandb_logger = WandbLogger(project="TransformerTest")
 
     # refine callbacks
     model_checkpoint = ModelCheckpoint(

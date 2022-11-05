@@ -298,21 +298,26 @@ class CNNLstmEncoder(pl.LightningModule):
         return optimizer
 
 class PositionalEncoding(nn.Module):
-    def __init__(self,max_len,d_model, dropout=0.1):
-        super(PositionalEncoding, self).__init__()
+
+    def __init__(self,max_len: int,d_model: int , dropout: float =0.1):
+        super().__init__()
         self.dropout = nn.Dropout(p=dropout)
 
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1).repeat(100,1)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(1, max_len, d_model)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
         self.register_buffer('pe', pe)
 
-    def forward(self, x):
-        x = x + self.pe[:,:x.size(1), :]
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x: Tensor, shape [batch_size, max_len, embedding_dim]
+        """
+        x = x + self.pe[:x.size(0)]
         return self.dropout(x)
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self,dim,head_num=2,dropout=0.1) -> None:
@@ -322,9 +327,9 @@ class MultiHeadAttention(nn.Module):
 
 
         d_head = int(dim/head_num)
-        self.Linear_Q = nn.Linear(dim, dim, bias=False)
-        self.Linear_K = nn.Linear(dim, dim, bias=False)
-        self.Linear_V = nn.Linear(dim, dim, bias=False)
+        self.linear_Q = nn.Linear(dim, dim, bias=False)
+        self.linear_K = nn.Linear(dim, dim, bias=False)
+        self.linear_V = nn.Linear(dim, dim, bias=False)
         self.linear = nn.Linear(dim, dim, bias=False)
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(dropout)
@@ -354,7 +359,7 @@ class MultiHeadAttention(nn.Module):
         if mask is not None:
             QK = QK + mask
 
-        softmax_QK = self.soft(QK)
+        softmax_QK = self.softmax(QK)
         softmax_QK = self.dropout(softmax_QK)
 
         QKV = torch.matmul(softmax_QK, V)
@@ -368,7 +373,7 @@ class FeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.linear_1 = nn.Linear(dim, dim*mlp_ratio)
         self.relu = nn.ReLU()
-        self.linear_2 = nn.Linear(mlp_ratio, dim)
+        self.linear_2 = nn.Linear(dim*mlp_ratio, dim)
 
     def forward(self, x):
         x = self.linear_1(x)
@@ -413,9 +418,15 @@ class ViTransformer(pl.LightningModule):
         self.block_num = block_num
         
         # 1) Linear mapper
+        """
+        x : [batch_size , max_len , hiddenDim]
+        """
         self.linear_mapper = nn.Linear(self.inputDim,self.hiddenDim)
 
         # 2) learnable classification token
+        """
+        output ; [batch_size , 1(class token) + max_len, hiddenDim]
+        """
         self.class_token = nn.Parameter(torch.rand(1,self.hiddenDim))        
 
         self.PE = PositionalEncoding(n_patches+1,self.hiddenDim)
@@ -441,7 +452,7 @@ class ViTransformer(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, inputs):
-        # in lightning, forward defines the prediction/inference actions
+        
         tokens = self.linear_mapper(inputs.view(-1,self.n_patches,self.inputDim))
 
         #adding classification token to the tokens
@@ -521,3 +532,6 @@ class ViTransformer(pl.LightningModule):
             lr=self.lr,
             )
         return optimizer
+
+
+

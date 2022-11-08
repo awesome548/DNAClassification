@@ -11,9 +11,7 @@ class Dataset(torch.utils.data.Dataset):
             p = torch.load(pFile)
             n = torch.load(nFile)
             data = torch.cat((p, n)).to(torch.float)
-            #print(data.size())
-            self.data = data.view(-1,input_length,input_dim)
-            #self.data = data
+            self.data = data.view(-1,input_dim,input_length)
             #target 0, nontarget 1
             p_labels = torch.zeros(p.shape[0])
             n_labels = torch.ones(n.shape[0])
@@ -29,14 +27,11 @@ class Dataset(torch.utils.data.Dataset):
             return X, y
 
 class CNNDataset(torch.utils.data.Dataset):
-      def __init__(self, pFile, nFile,size):
+      def __init__(self, pFile, nFile):
             
-            input_length = size[0]
-            input_dim = size[1]
             p = torch.load(pFile)
             n = torch.load(nFile)
-            data = torch.cat((p, n)).to(torch.float)
-            self.data = data.view(-1,input_dim,input_length)
+            self.data = torch.cat((p, n)).to(torch.float)
             #target 0, nontarget 1
             p_labels = torch.zeros(p.shape[0])
             n_labels = torch.ones(n.shape[0])

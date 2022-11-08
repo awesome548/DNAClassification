@@ -1,15 +1,14 @@
-from ont_fast5_api.fast5_interface import get_fast5_file
-import os
 import glob
 import click
 import torch
 import numpy as np
 from scipy import stats
-
+from ont_fast5_api.fast5_interface import get_fast5_file
+import os
 
 def normalization(data_test, xi, outpath,filename, pos = True):
 	mad = stats.median_abs_deviation(data_test, axis=1, scale='normal')
-	m = np.median(data_test, axis=1)   
+	m = np.median(data_test, axis=1)
 	data_test = ((data_test - np.expand_dims(m,axis=1))*1.0) / (1.4826 * np.expand_dims(mad,axis=1))
 
 	x = np.where(np.abs(data_test) > 3.5)
@@ -34,8 +33,9 @@ def normalization(data_test, xi, outpath,filename, pos = True):
 @click.option('--outpath', '-o', help='The output pytorch tensor directory path')
 @click.option('--batch', '-b', default=6400, help='Batch size, default 10000')
 @click.option('--cutoff', '-c', default=1500, help='Cutoff the first c signals')
+@click.option('--cutlen', '-l', default=3000, help='Data length')
 
-def main(gtpos, gtneg, inpath, outpath, batch, cutoff):
+def main(gtpos, gtneg, inpath, outpath, batch, cutoff, cutlen):
 	### read in pos and neg ground truth variables
 	my_file_pos = open(gtpos, "r")
 	posli = my_file_pos.readlines()
@@ -63,7 +63,8 @@ def main(gtpos, gtneg, inpath, outpath, batch, cutoff):
 	ni = 0
 
 	srcdir = '/z/kiku/Dataset/'
-	
+
+
 	for fileNM in glob.glob(inpath + '/*.fast5'):
 		with get_fast5_file(fileNM, mode="r") as f5:
 			#print("##### file: " + fileNM)
@@ -71,10 +72,10 @@ def main(gtpos, gtneg, inpath, outpath, batch, cutoff):
 				raw_data = read.get_raw_data(scale=True)
 
 				### only parse reads that are long enough
-				if len(raw_data) >= (cutoff + 3000):
+				if len(raw_data) >= (cutoff + cutlen):
 					if read.read_id in posli:
 						pi += 1
-						arrpos.append(raw_data[cutoff:(cutoff + 3000)])
+						arrpos.append(raw_data[cutoff:(cutoff + cutlen)])
 						if (pi%batch == 0) and (pi != 0):
 							normalization(arrpos, pi, outpath,inpath[len(srcdir):], pos = True)
 							del arrpos
@@ -83,7 +84,7 @@ def main(gtpos, gtneg, inpath, outpath, batch, cutoff):
 
 					if read.read_id in negli:
 						ni += 1
-						arrneg.append(raw_data[cutoff:(cutoff + 3000)])
+						arrneg.append(raw_data[cutoff:(cutoff + cutlen)])
 						if (ni%batch == 0) and (ni != 0):
 							normalization(arrneg, ni, outpath,inpath[len(srcdir):],pos = False)
 							del arrneg

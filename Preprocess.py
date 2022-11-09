@@ -6,7 +6,7 @@ from scipy import stats
 from ont_fast5_api.fast5_interface import get_fast5_file
 import os
 
-def normalization(data_test, xi, outpath,filename, pos = True):
+def normalization(data_test, xi, outpath,filename,cutlen, pos = True):
 	mad = stats.median_abs_deviation(data_test, axis=1, scale='normal')
 	m = np.median(data_test, axis=1)
 	data_test = ((data_test - np.expand_dims(m,axis=1))*1.0) / (1.4826 * np.expand_dims(mad,axis=1))
@@ -15,7 +15,7 @@ def normalization(data_test, xi, outpath,filename, pos = True):
 	for i in range(x[0].shape[0]):
 		if x[1][i] == 0:
 			data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]+1]
-		elif x[1][i] == 2999:
+		elif x[1][i] == (cutlen-1):
 			data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]-1]
 		else:
 			data_test[x[0][i],x[1][i]] = (data_test[x[0][i],x[1][i]-1] + data_test[x[0][i],x[1][i]+1])/2
@@ -77,7 +77,7 @@ def main(gtpos, gtneg, inpath, outpath, batch, cutoff, cutlen):
 						pi += 1
 						arrpos.append(raw_data[cutoff:(cutoff + cutlen)])
 						if (pi%batch == 0) and (pi != 0):
-							normalization(arrpos, pi, outpath,inpath[len(srcdir):], pos = True)
+							normalization(arrpos, pi, outpath,inpath[len(srcdir):], pos = True, cutlen = cutlen)
 							del arrpos
 							arrpos = []
 							#print("OK")
@@ -86,7 +86,7 @@ def main(gtpos, gtneg, inpath, outpath, batch, cutoff, cutlen):
 						ni += 1
 						arrneg.append(raw_data[cutoff:(cutoff + cutlen)])
 						if (ni%batch == 0) and (ni != 0):
-							normalization(arrneg, ni, outpath,inpath[len(srcdir):],pos = False)
+							normalization(arrneg, ni, outpath,inpath[len(srcdir):],pos = False, cutlen = cutlen)
 							del arrneg
 							arrneg = []
 

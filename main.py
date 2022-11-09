@@ -3,7 +3,7 @@ from unicodedata import bidirectional
 from xml.etree.ElementInclude import include
 from sentry_sdk import configure_scope
 import torch
-from dataset import Dataset,CNNDataset
+from dataset import FormatDataset,NormalDataset
 import click
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import  random_split
@@ -39,52 +39,86 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     print(device)
 
     ### PREPARATION ###
-    #variable
-    input_dim = 1
-    input_length = 3000
-    hidden_size = 128
-    output_size = 2
+    """
+    Training setting
+    """
     lr = learningrate
-    size = (input_length,input_dim)
     num_classes = 2
-    bidirectional = True
 
+    """
+    Data Format setting
+    """
+    inputDim = 1
+    inputLen = 3000
+    hiddenDim = 128
+    outputDim = 2
+    size = {
+        'dim' : inputDim,
+        'lenght' : inputLen,
+        'num_class' : num_classes
+    }
+
+    """
+    CNN setting
+    """
+    includeCNN = True,
     #CNN variable
     cnn_params = {
-        'includeCNN' : True,
         'padd' : 5,
         'ker' : 19,
         'stride' : 3,
-        'convDim' : 10,
+        'convDim' : 20,
     }
 
-    # ### DATASET ###
-    # if cnn_params['includeCNN']:
-    #     #CNN&LSTM
-    #     training_set = Dataset(ptrain, ntrain,size)
-    #     validation_set = Dataset(pval, nval,size)
-    #     test_set = Dataset(ptest,ntest,size)
-    #     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-    #     ### MODEL ###
-    #     model = CNNLstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional,**conv_params)
-    # else:
-    #     #LSTM only
-    #     training_set = Dataset(ptrain, ntrain,size)
-    #     validation_set = Dataset(pval, nval,size)
-    #     test_set = Dataset(ptest,ntest,size)
-    #     data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-    #     ### MODEL ###
-    #     model = LstmEncoder(inputDim=input_dim,outputDim=output_size,hiddenDim=hidden_size,lr=lr,classes=num_classes,bidirect=bidirectional)
+    """
+    LSTM setting
+    """            
+    useLstm = False
+    lstm_params = {
+        'inputDim' : 1,
+        'hiddenDim' : 128,
+        'outputDim' : 2,
+        'bidirect' : True
+    }
 
+    useResNet = True
 
-    training_set = CNNDataset(ptrain, ntrain)
-    validation_set = CNNDataset(pval, nval)
-    test_set = CNNDataset(ptest,ntest)
-    data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-    model = ResNet(Bottleneck,[2,2,2,2],cutlen=cutlen)
+    """
+    MODEL architecture
+    """
+    if useLstm:
+        if includeCNN:
+            """
+            LSTM & CNN
+            """
+            training_set = FormatDataset(ptrain, ntrain,**size)
+            validation_set = FormatDataset(pval, nval,**size)
+            test_set = FormatDataset(ptest,ntest,**size)
+            data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+            ### MODEL ###
+            model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
+        else:
+            """
+            LSTM
+            """ 
+            training_set = FormatDataset(ptrain, ntrain,**size)
+            validation_set = FormatDataset(pval, nval,**size)
+            test_set = FormatDataset(ptest,ntest,**size)
+            data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+            ### MODEL ###
+            model = LstmEncoder(**lstm_params,lr=lr,classes=num_classes)
+    elif useResNet:
+        """
+        ResNet 
+        """
+        training_set = NormalDataset(ptrain, ntrain,num_classes)
+        validation_set = NormalDataset(pval, nval,num_classes)
+        test_set = NormalDataset(ptest,ntest,num_classes)
+        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+        model = ResNet(Bottleneck,[2,2,2,2],cutlen=cutlen)
 
     # define logger
-    wandb_logger = WandbLogger(project="ResNetTest")
+    wandb_logger = WandbLogger(project="LSTM&CNN")
 
     # refine callbacks
     model_checkpoint = ModelCheckpoint(

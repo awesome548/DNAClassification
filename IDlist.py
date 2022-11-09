@@ -34,6 +34,7 @@ def main(target,filename,outfile,cutoff):
 	### load data
 	target_list = []
 
+	print("making ID lists")
 	for fileNM in glob.glob(target + '/*.fast5'):
 		target_list = get_raw_data(target, fileNM, target_list, cutoff)
 

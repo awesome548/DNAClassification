@@ -180,10 +180,12 @@ class CNNLstmEncoder(pl.LightningModule):
         self.classes = classes
         self.loss_fn = nn.MSELoss()
 
+        """
+        ResNet conv
+        """
         self.convDim = convDim
         convLen = ((3000+2*padd-ker)/stride) + 1
         self.poolLen = int(((convLen - 2) / 2) + 1)
-        #Model Architecture
         self.conv = nn.Sequential(
             nn.Conv1d(inputDim, self.convDim,kernel_size=ker, padding=padd, stride=stride),
             nn.ReLU(),
@@ -191,14 +193,14 @@ class CNNLstmEncoder(pl.LightningModule):
         )
         #Model Architecture
         if bidirect:
-            self.lstm = nn.LSTM(input_size = self.poolLen,
+            self.lstm = nn.LSTM(input_size = self.convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = True,
                             )
             self.label = nn.Linear(hiddenDim*2, outputDim)
         else:
-            self.lstm = nn.LSTM(input_size = self.poolLen,
+            self.lstm = nn.LSTM(input_size = self.convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             )
@@ -220,9 +222,14 @@ class CNNLstmEncoder(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, inputs,hidden0=None):
-        # in lightning, forward defines the prediction/inference actions
+        """
+        x [batch_size , convDim , poolLen]
+        """
         x = self.conv(inputs)
-        output, (hidden,cell) = self.lstm(x,hidden0)
+        """
+        x [batch_size , poolLen , convDim]
+        """
+        output, (hidden,cell) = self.lstm(torch.transpose(x,1,2),hidden0)
         y_hat = self.label(output[:,-1,])
         y_hat = y_hat.to(torch.float32)
         return y_hat
@@ -285,8 +292,8 @@ class CNNLstmEncoder(pl.LightningModule):
             self.test_metrics,
             prog_bar=True,
             logger=True,
-            on_epoch=False,
-            on_step=True,
+            on_epoch=True,
+            on_step=False,
         )
         return {"test_loss" : loss}
 

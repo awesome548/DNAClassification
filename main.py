@@ -46,6 +46,13 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     num_classes = 2
 
     """
+    MODEL Select
+    """
+    useResNet = True
+    includeCNN = False
+    useLstm = False
+
+    """
     Data Format setting
     """
     inputDim = 1
@@ -54,15 +61,13 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     outputDim = 2
     size = {
         'dim' : inputDim,
-        'lenght' : inputLen,
+        'length' : inputLen,
         'num_class' : num_classes
     }
 
     """
     CNN setting
     """
-    includeCNN = True,
-    #CNN variable
     cnn_params = {
         'padd' : 5,
         'ker' : 19,
@@ -73,7 +78,6 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     """
     LSTM setting
     """            
-    useLstm = False
     lstm_params = {
         'inputDim' : 1,
         'hiddenDim' : 128,
@@ -81,7 +85,6 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
         'bidirect' : True
     }
 
-    useResNet = True
 
     """
     MODEL architecture
@@ -118,7 +121,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
         model = ResNet(Bottleneck,[2,2,2,2],cutlen=cutlen)
 
     # define logger
-    wandb_logger = WandbLogger(project="LSTM&CNN")
+    wandb_logger = WandbLogger(project="LSTM-CNN")
 
     # refine callbacks
     model_checkpoint = ModelCheckpoint(

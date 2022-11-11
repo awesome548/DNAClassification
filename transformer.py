@@ -161,10 +161,6 @@ class EncoderBlock(nn.Module):
         x = self.layer_norm_2(x)
         return x
 
-def bcnorm(channel):
-    return nn.BatchNorm1d(channel)
-
-
 
 class ViTransformer(pl.LightningModule):
     def __init__(self,length,n_patches,hiddenDim,classes=2,dropout=0.1,head_num=2,block_num=2,lr=0.001):
@@ -172,8 +168,6 @@ class ViTransformer(pl.LightningModule):
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
-
-        self.channel = 20
 
         convDim = 10
         inputDim = 1
@@ -193,7 +187,7 @@ class ViTransformer(pl.LightningModule):
         self.poolLen = int(((convLen - 2) / 2) + 1)
         self.conv = nn.Sequential(
             nn.Conv1d(self.inputDim, self.convDim,kernel_size=ker, padding=padd, stride=stride),
-            nn.BatchNorm1d(self.channel),
+            nn.BatchNorm1d(20),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=0, stride=2),
         )
@@ -250,14 +244,7 @@ class ViTransformer(pl.LightningModule):
 
         # Logging to TensorBoard by default
         self.log("train_loss",loss)
-        self.train_metrics(y_hat,y.to(torch.int64))
-        self.log_dict(
-            self.train_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
-        )
+        self.log(self.train_metrics(y_hat,y.to(torch.int64)))
         return loss
 
 

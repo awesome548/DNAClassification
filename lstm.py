@@ -9,45 +9,32 @@ import math
 
 ### TORCH METRICS ####
 def get_full_metrics(
-    threshold=0.5,
     average_method="macro",
-    num_classes=None,
+    classes=None,
     prefix=None,
-    ignore_index=None,
     ):
     return MetricCollection(
         [
-            Accuracy(
-                threshold=threshold,
-                ignore_index=ignore_index,
-            ),
+            Accuracy(),
             Precision(
-                threshold=threshold,
                 average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
+                num_classes=classes,
             ),
             Recall(
-                threshold=threshold,
                 average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
+                num_classes=classes,
             ),
         ],
         prefix= prefix
     )
 
 def part_metrics(
-    threshold=0.5,
-    average_method="macro",
-    num_classes=None,
     prefix=None,
     ignore_index=None,
     ):
     return MetricCollection(
         [
             Accuracy(
-                threshold=threshold,
                 ignore_index=ignore_index,
             ),
         ],
@@ -77,14 +64,8 @@ class LstmEncoder(pl.LightningModule):
                             batch_first = True,
                             )
             self.label = nn.Linear(hiddenDim, outputDim)
-        self.train_metrics = part_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = part_metrics(
-            num_classes=classes,
-            prefix="valid_"
-        )
+        self.train_metrics = part_metrics(prefix="train_")
+        self.valid_metrics = part_metrics(prefix="valid_")
         self.test_metrics = get_full_metrics(
             num_classes=classes,
             prefix="test_"
@@ -107,16 +88,11 @@ class LstmEncoder(pl.LightningModule):
         loss = self.loss_fn(y_hat,y)
 
         # Logging to TensorBoard by default
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
+
         self.log("train_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.train_metrics(yhat_for_metrics,y.to(torch.int64))
-        self.log_dict(
-            self.train_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
-        )
+        self.log("train_acc",self.train_metrics(y_hat,y))
         return loss
 
 
@@ -126,16 +102,11 @@ class LstmEncoder(pl.LightningModule):
         y_hat = self.forward(x)
         y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
+        
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
         self.log("valid_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.valid_metrics(yhat_for_metrics,y.to(torch.int64))
-        self.log_dict(
-            self.valid_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=True,
-            on_step=False,
-        )
+        self.log("valid_acc",self.valid_metrics(y_hat,y))
         return {"valid_loss" : loss}
 
     def validation_end(self, outputs):
@@ -149,15 +120,14 @@ class LstmEncoder(pl.LightningModule):
         y_hat = self.forward(x)
         y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
+        
+        
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
         self.log("test_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.test_metrics(yhat_for_metrics,y.to(torch.int64))
         self.log_dict(
-            self.test_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
+            self.test_metrics(y_hat,y),
+            on_epoch=True,
         )
         return {"test_loss" : loss}
 
@@ -184,12 +154,11 @@ class CNNLstmEncoder(pl.LightningModule):
         ResNet conv
         """
         self.convDim = convDim
-        convLen = ((3000+2*padd-ker)/stride) + 1
-        self.poolLen = int(((convLen - 2) / 2) + 1)
         self.conv = nn.Sequential(
             nn.Conv1d(inputDim, self.convDim,kernel_size=ker, padding=padd, stride=stride),
+            nn.BatchNorm1d(20),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, padding=0, stride=2),
+            nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         #Model Architecture
         if bidirect:
@@ -206,15 +175,8 @@ class CNNLstmEncoder(pl.LightningModule):
                             )
             self.label = nn.Linear(hiddenDim, outputDim)
 
-
-        self.train_metrics = part_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = part_metrics(
-            num_classes=classes,
-            prefix="valid_"
-        )
+        self.train_metrics = part_metrics(prefix="train_")
+        self.valid_metrics = part_metrics(prefix="valid_")
         self.test_metrics = get_full_metrics(
             num_classes=classes,
             prefix="test_"
@@ -239,20 +201,13 @@ class CNNLstmEncoder(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
 
         # Logging to TensorBoard by default
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
         self.log("train_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.train_metrics(yhat_for_metrics,y.to(torch.int64))
-        self.log_dict(
-            self.train_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
-        )
+        self.log(self.train_metrics(y_hat,y))
         return loss
 
 
@@ -260,18 +215,12 @@ class CNNLstmEncoder(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
+        
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
         self.log("valid_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.valid_metrics(yhat_for_metrics,y.to(torch.int64))
-        self.log_dict(
-            self.valid_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=True,
-            on_step=False,
-        )
+        self.log(self.valid_metrics(y_hat,y))
         return {"valid_loss" : loss}
 
     def validation_end(self, outputs):
@@ -283,15 +232,14 @@ class CNNLstmEncoder(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
+        
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
         self.log("test_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.test_metrics(yhat_for_metrics,y.to(torch.int64))
+        self.test_metrics(y_hat,y.to(torch.int64))
         self.log_dict(
             self.test_metrics,
-            prog_bar=True,
-            logger=True,
             on_epoch=True,
             on_step=False,
         )

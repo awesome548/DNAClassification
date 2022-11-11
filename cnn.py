@@ -9,17 +9,6 @@ from torchmetrics import Accuracy, MetricCollection, Precision,Recall
 import torch.nn.functional as F
 import math
 ### TORCH METRICS ####
-def get_full_metrics(
-    prefix=None,
-    ):
-    return MetricCollection(
-        [
-            Accuracy(),
-            Precision(),
-            Recall(),
-        ],
-        prefix=prefix
-    )
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):
     return nn.Conv1d(in_channel, out_channel, kernel_size=3, stride=stride,
 				   padding=padding, bias=False, dilation=padding, groups=groups)
@@ -95,11 +84,11 @@ class ResNet(pl.LightningModule):
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
 
-        self.train_acc = Accuracy()
-        self.valid_acc = Accuracy()
-        self.test_metrics = get_full_metrics(
-            prefix="test_"
-        )
+        self.train_acc = Accuracy(num_classes=2,average="macro")
+        self.valid_acc = Accuracy(num_classes=2,average="macro")
+        self.test_acc = Accuracy(num_classes=2,average="macro")
+        self.test_preci = Precision(num_classes=2,average="macro")
+        self.test_recall = Recall(num_classes=2,average="macro")
         self.save_hyperparameters()
 
 
@@ -161,15 +150,10 @@ class ResNet(pl.LightningModule):
 
         # Logging to TensorBoard by default
         self.log("train_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.train_acc(yhat_for_metrics,y.to(torch.int64))
-        self.log(
-            self.train_acc,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
-        )
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
+        self.train_acc(y_hat,y.to(torch.int64))
+        self.log("train_acc",self.train_acc)
         return loss
 
     def training_epoch_end(self, outputs):
@@ -182,17 +166,12 @@ class ResNet(pl.LightningModule):
         y_hat = self.forward(x)
         y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
-        self.log("valid_loss",loss)
 
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.valid_acc.update(yhat_for_metrics,y.to(torch.int64))
-        self.log(
-            self.valid_acc,
-            prog_bar=True,
-            logger=True,
-            on_epoch=True,
-            on_step=False,
-        )
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
+        self.log("valid_loss",loss)
+        self.valid_acc.update(y_hat,y)
+        self.log("valid_acc",self.valid_acc)
         return {"valid_loss" : loss}
     
     def validation_epoch_end(self, outputs):
@@ -209,15 +188,17 @@ class ResNet(pl.LightningModule):
         y_hat = self.forward(x)
         y_hat = y_hat.to(torch.float32)
         loss = self.loss_fn(y_hat,y)
+        
         self.log("test_loss",loss)
-        yhat_for_metrics = F.softmax(y_hat,dim=1)
-        self.test_metrics(yhat_for_metrics,y.to(torch.int64))
-        self.log(
-            self.test_metrics,
-            prog_bar=True,
-            logger=True,
+        y_hat = F.softmax(y_hat,dim=1)
+        y = y.to(torch.int64)
+        self.log_dict(
+            {
+                "test_acc" :self.test_acc(y_hat,y),
+                "test_precision" : self.test_preci(y_hat,y),
+                "test_recall" : self.test_recall(y_hat,y)
+            },
             on_epoch=True,
-            on_step=False,
         )
         return {"test_loss" : loss}
 

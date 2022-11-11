@@ -9,50 +9,25 @@ import math
 
 ### TORCH METRICS ####
 def get_full_metrics(
-    threshold=0.5,
     average_method="macro",
     num_classes=None,
-    prefix=None,
-    ignore_index=None,
+    prefix=None
     ):
     return MetricCollection(
         [
-            Accuracy(
-                threshold=threshold,
-                ignore_index=ignore_index,
-            ),
+            Accuracy(),
             Precision(
-                threshold=threshold,
                 average=average_method,
                 num_classes=num_classes,
-                ignore_index=ignore_index,
             ),
             Recall(
-                threshold=threshold,
                 average=average_method,
                 num_classes=num_classes,
-                ignore_index=ignore_index,
             ),
         ],
         prefix= prefix
     )
 
-def part_metrics(
-    threshold=0.5,
-    average_method="macro",
-    num_classes=None,
-    prefix=None,
-    ignore_index=None,
-    ):
-    return MetricCollection(
-        [
-            Accuracy(
-                threshold=threshold,
-                ignore_index=ignore_index,
-            ),
-        ],
-        prefix=prefix
-    )
 
 class PositionalEncoding(nn.Module):
     def __init__(self,max_len: int,d_model: int , dropout: float =0.1):
@@ -205,14 +180,8 @@ class ViTransformer(pl.LightningModule):
             nn.Softmax(dim=-1)
         )
         # Metrics
-        self.train_metrics = part_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = part_metrics(
-            num_classes=classes,
-            prefix="valid_"
-        )
+        self.train_acc = Accuracy(num_classes=2,average="macro")
+        self.valid_acc = Accuracy(num_classes=2,average="macro")
         self.test_metrics = get_full_metrics(
             num_classes=classes,
             prefix="test_"

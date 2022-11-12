@@ -49,9 +49,8 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     """
     MODEL Select
     """
-    useResNet = True
-    includeCNN = False
-    useLstm = False
+    useResNet = False
+    useLstm = True
 
     """
     Data Format setting
@@ -91,7 +90,6 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     MODEL architecture
     """
     if useLstm:
-        if includeCNN:
             """
             LSTM & CNN
             """
@@ -101,16 +99,6 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
             data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
             ### MODEL ###
             model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
-        else:
-            """
-            LSTM
-            """ 
-            training_set = FormatDataset(ptrain, ntrain,**size)
-            validation_set = FormatDataset(pval, nval,**size)
-            test_set = FormatDataset(ptest,ntest,**size)
-            data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-            ### MODEL ###
-            model = LstmEncoder(**lstm_params,lr=lr,classes=num_classes)
     elif useResNet:
         """
         ResNet 
@@ -119,10 +107,10 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
         validation_set = NormalDataset(pval, nval,num_classes)
         test_set = NormalDataset(ptest,ntest,num_classes)
         data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-        model = ResNet(Bottleneck,[2,2,2,2],cutlen=cutlen)
+        model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
 
     # define logger
-    wandb_logger = WandbLogger(project="LSTM-CNN")
+    wandb_logger = WandbLogger(project="ResNet")
 
     # refine callbacks
     model_checkpoint = ModelCheckpoint(
@@ -141,6 +129,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
 
     trainer = pl.Trainer(
         max_epochs=epoch,
+        min_epochs=20,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,

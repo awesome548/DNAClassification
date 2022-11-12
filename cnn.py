@@ -62,7 +62,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(pl.LightningModule):
-    def __init__(self, block, layers, cutlen,num_classes=2,lr=0.01):
+    def __init__(self, block, layers, cutlen,classes,lr=0.01):
         super(ResNet, self).__init__()
         self.chan1 = 20
 
@@ -75,7 +75,7 @@ class ResNet(pl.LightningModule):
         self.fc = nn.Linear(67 , 2)
 
         self.lr = lr
-        self.classes = num_classes
+        self.classes = classes
         self.loss_fn = nn.CrossEntropyLoss()
         self.cutlen = cutlen
 
@@ -84,11 +84,11 @@ class ResNet(pl.LightningModule):
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
 
-        self.train_acc = Accuracy(num_classes=2,average="macro")
-        self.valid_acc = Accuracy(num_classes=2,average="macro")
-        self.test_acc = Accuracy(num_classes=2,average="macro")
-        self.test_preci = Precision(num_classes=2,average="macro")
-        self.test_recall = Recall(num_classes=2,average="macro")
+        self.train_acc = Accuracy(num_classes=classes,average="macro")
+        self.valid_acc = Accuracy(num_classes=classes,average="macro")
+        self.test_acc = Accuracy(num_classes=classes,average="macro")
+        self.test_preci = Precision(num_classes=classes,average="macro")
+        self.test_recall = Recall(num_classes=classes,average="macro")
         self.save_hyperparameters()
 
 

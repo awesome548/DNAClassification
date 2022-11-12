@@ -15,7 +15,7 @@ class FormatDataset(torch.utils.data.Dataset):
             #target 0, nontarget 1
             p_labels = torch.zeros(p.shape[0])
             n_labels = torch.ones(n.shape[0])
-            labels = torch.tensor(torch.cat((p_labels,n_labels),dim=0)).to(torch.int64)
+            labels = (torch.cat((p_labels,n_labels),dim=0).clone().detach()).to(torch.int64)
             self.label = F.one_hot(labels,num_classes=num_class).to(torch.float32)
       
       def __len__(self):
@@ -35,7 +35,7 @@ class NormalDataset(torch.utils.data.Dataset):
             #target 0, nontarget 1
             p_labels = torch.zeros(p.shape[0])
             n_labels = torch.ones(n.shape[0])
-            labels = torch.tensor(torch.cat((p_labels,n_labels),dim=0)).to(torch.int64)
+            labels = (torch.cat((p_labels,n_labels),dim=0).clone().detach()).to(torch.int64)
             self.label = F.one_hot(labels,num_classes=num_class).to(torch.float32)
       
       def __len__(self):

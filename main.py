@@ -14,6 +14,8 @@ from cnn import ResNet, Bottleneck
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from datamodule import DataModule
+from preprocess import Preprocess
+import glob
 
 
 @click.command()
@@ -30,13 +32,25 @@ from datamodule import DataModule
 @click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-c', default=3000, help='Cutting length')
+@click.option('--cutoff', '-co', default=1500, help='Cutting length')
 
 
-def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutlen):
+def main(targetA,targetB,targetC,inpath, batch, epoch, learningrate,cutlen,cutoff):
+
+    """
+    Dataset Preference
+    """
+    dataset = glob.glob(inpath+'/*')
+    dataset_size = 8000 
+    dataA = Preprocess(targetA,dataset[0],cutoff=cutoff).process()
+    dataB = Preprocess(targetB,dataset[1],cutoff=cutoff).process()
+    dataC = Preprocess(targetC,dataset[2],cutoff=cutoff).process()
+
+    train_size = int(0.8 * dataset_size)
+    val_size, test_size = int(0.2 * dataset_size)
 
     #torch setting
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(device)
 
     ### PREPARATION ###
     """
@@ -45,6 +59,8 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
     lr = learningrate
     num_classes = 2
     bidirectional = True
+    # define logger
+    wandb_logger = WandbLogger(project="CutLenSearch")
 
     """
     MODEL Select
@@ -77,7 +93,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
 
     """
     LSTM setting
-    """            
+    """
     lstm_params = {
         'inputDim' : 1,
         'hiddenDim' : 128,
@@ -101,7 +117,7 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
             model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
     elif useResNet:
         """
-        ResNet 
+        ResNet
         """
         training_set = NormalDataset(ptrain, ntrain,num_classes)
         validation_set = NormalDataset(pval, nval,num_classes)
@@ -109,8 +125,6 @@ def main(ptrain, pval, ntrain, nval,ptest,ntest, batch, epoch, learningrate,cutl
         data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
 
-    # define logger
-    wandb_logger = WandbLogger(project="ResNet")
 
     # refine callbacks
     model_checkpoint = ModelCheckpoint(

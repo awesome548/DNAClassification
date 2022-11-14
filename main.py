@@ -3,7 +3,6 @@ from unicodedata import bidirectional
 from xml.etree.ElementInclude import include
 from sentry_sdk import configure_scope
 import torch
-from dataset import FormatDataset,NormalDataset
 import click
 from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import  random_split
@@ -16,18 +15,14 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from datamodule import DataModule
 from preprocess import Preprocess
 import glob
+from dataformat import Dataformat
 
 
 @click.command()
-@click.option('--pTrain', '-pt', help='The path of positive sequence training set', type=click.Path(exists=True))
-@click.option('--pVal', '-pv', help='The path of positive sequence validation set', type=click.Path(exists=True))
-@click.option('--nTrain', '-nt', help='The path of negative sequence training set', type=click.Path(exists=True))
-@click.option('--nVal', '-nv', help='The path of negative sequence validation set', type=click.Path(exists=True))
-@click.option('--pTest', '-ptt', help='The path of positive sequence test set', type=click.Path(exists=True))
-@click.option('--nTest', '-ntt', help='The path of negative sequence test set', type=click.Path(exists=True))
+@click.option('--target', '-t', help='The path of positive sequence training set', type=click.Path(exists=True))
+# Inpath is the taget directory of all dataset
+@click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 
-#@click.option('--outpath', '-o', help='The output path and name for the best trained model')
-#@click.option('--interm', '-i', help='The path and name for model checkpoint (optional)', type=click.Path(exists=True), required=False)
 @click.option('--batch', '-b', default=200, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
@@ -35,19 +30,18 @@ import glob
 @click.option('--cutoff', '-co', default=1500, help='Cutting length')
 
 
-def main(targetA,targetB,targetC,inpath, batch, epoch, learningrate,cutlen,cutoff):
+def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
 
     """
     Dataset Preference
     """
-    dataset = glob.glob(inpath+'/*')
-    dataset_size = 8000 
-    dataA = Preprocess(targetA,dataset[0],cutoff=cutoff).process()
-    dataB = Preprocess(targetB,dataset[1],cutoff=cutoff).process()
-    dataC = Preprocess(targetC,dataset[2],cutoff=cutoff).process()
+    num_classes = 3
+    dataset_size = 6400
 
-    train_size = int(0.8 * dataset_size)
-    val_size, test_size = int(0.2 * dataset_size)
+    idset = glob.glob(target+'/*.txt')
+    dataset = glob.glob(inpath+'/*')
+
+    data_module = Dataformat(idset,dataset,dataset_size,cutoff,num_classes).process(batch)
 
     #torch setting
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -57,16 +51,14 @@ def main(targetA,targetB,targetC,inpath, batch, epoch, learningrate,cutlen,cutof
     Training setting
     """
     lr = learningrate
-    num_classes = 2
-    bidirectional = True
     # define logger
-    wandb_logger = WandbLogger(project="CutLenSearch")
+    wandb_logger = WandbLogger(project="ResNet")
 
     """
     MODEL Select
     """
-    useResNet = False
-    useLstm = True
+    useResNet = True
+    useLstm = False
 
     """
     Data Format setting
@@ -97,7 +89,7 @@ def main(targetA,targetB,targetC,inpath, batch, epoch, learningrate,cutlen,cutof
     lstm_params = {
         'inputDim' : 1,
         'hiddenDim' : 128,
-        'outputDim' : 2,
+        'outputDim' : num_classes,
         'bidirect' : True
     }
 
@@ -109,20 +101,17 @@ def main(targetA,targetB,targetC,inpath, batch, epoch, learningrate,cutlen,cutof
             """
             LSTM & CNN
             """
-            training_set = FormatDataset(ptrain, ntrain,**size)
-            validation_set = FormatDataset(pval, nval,**size)
-            test_set = FormatDataset(ptest,ntest,**size)
-            data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+            #training_set = FormatDataset(ptrain, ntrain,**size)
+            # validation_set = FormatDataset(pval, nval,**size)
+            # test_set = FormatDataset(ptest,ntest,**size)
+            # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
             ### MODEL ###
             model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
     elif useResNet:
         """
         ResNet
         """
-        training_set = NormalDataset(ptrain, ntrain,num_classes)
-        validation_set = NormalDataset(pval, nval,num_classes)
-        test_set = NormalDataset(ptest,ntest,num_classes)
-        data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
+        # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
 
 

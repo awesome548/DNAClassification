@@ -7,35 +7,7 @@ import torch.nn.functional as F
 import torch
 import math
 from process import MyProcess
-
-def get_full_metrics(
-    threshold=0.5,
-    average_method="macro",
-    num_classes=None,
-    prefix=None,
-    ignore_index=None,
-):
-    return MetricCollection(
-        [
-            Accuracy(
-                threshold=threshold,
-                ignore_index=ignore_index,
-            ),
-            Precision(
-                threshold=threshold,
-                average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
-            ),
-            Recall(
-                threshold=threshold,
-                average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
-            ),
-        ],
-        prefix= prefix
-    )
+from metrics import get_full_metrics
 
 ### CREATE MODEL ###
 class LstmEncoder(MyProcess):
@@ -149,7 +121,6 @@ class CNNLstmEncoder(MyProcess):
         y_hat = self.label(output[:,-1,])
         y_hat = y_hat.to(torch.float32)
         return y_hat
-
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

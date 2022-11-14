@@ -5,9 +5,11 @@ from torch.nn import functional as F
 from unicodedata import bidirectional
 import torch.nn as nn
 import pytorch_lightning as pl
-from torchmetrics import Accuracy, MetricCollection, Precision,Recall
 import torch.nn.functional as F
 import math
+from process import MyProcess
+from metrics import get_full_metrics
+
 ### TORCH METRICS ####
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):
     return nn.Conv1d(in_channel, out_channel, kernel_size=3, stride=stride,
@@ -61,7 +63,7 @@ class Bottleneck(nn.Module):
 		return out
 
 
-class ResNet(pl.LightningModule):
+class ResNet(MyProcess):
     def __init__(self, block, layers, cutlen,classes,lr=0.01):
         super(ResNet, self).__init__()
         self.chan1 = 20
@@ -72,7 +74,7 @@ class ResNet(pl.LightningModule):
         self.relu = nn.ReLU(inplace=True)
         self.pool = nn.MaxPool1d(2, padding=1, stride=2)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
-        self.fc = nn.Linear(67 , 2)
+        self.fc = nn.Linear(67 , classes)
 
         self.lr = lr
         self.classes = classes
@@ -83,12 +85,18 @@ class ResNet(pl.LightningModule):
         self.layer2 = self._make_layer(block, 30, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
-
-        self.train_acc = Accuracy(num_classes=classes,average="macro")
-        self.valid_acc = Accuracy(num_classes=classes,average="macro")
-        self.test_acc = Accuracy(num_classes=classes,average="macro")
-        self.test_preci = Precision(num_classes=classes,average="macro")
-        self.test_recall = Recall(num_classes=classes,average="macro")
+        self.train_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="train_",
+        )
+        self.valid_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="valid_",
+        )
+        self.test_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="test_",
+        )
         self.save_hyperparameters()
 
 
@@ -139,73 +147,10 @@ class ResNet(pl.LightningModule):
 
     def forward(self, x):
         return self._forward_impl(x)
-
-    def training_step(self, batch, batch_idx):
-        # training_step defined the train loop.
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-
-        # Logging to TensorBoard by default
-        self.log("train_loss",loss)
-        y_hat = F.softmax(y_hat,dim=1)
-        y = y.to(torch.int64)
-        self.train_acc(y_hat,y.to(torch.int64))
-        self.log("train_acc",self.train_acc)
-        return loss
-
-    def training_epoch_end(self, outputs):
-        self.train_acc.reset()
-
-
-    def validation_step(self, batch, batch_idx):
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-
-        y_hat = F.softmax(y_hat,dim=1)
-        y = y.to(torch.int64)
-        self.log("valid_loss",loss)
-        self.valid_acc.update(y_hat,y)
-        self.log("valid_acc",self.valid_acc)
-        return {"valid_loss" : loss}
     
-    def validation_epoch_end(self, outputs):
-        self.log('valid_acc_epoch', self.valid_acc.compute())
-        self.valid_acc.reset()
-
-    def validation_end(self, outputs):
-        avg_loss = torch.stack([x["valid_loss"] for x in outputs]).mean()
-        return {"avg_val_loss": avg_loss}
-
-    def test_step(self, batch, batch_idx):
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-        
-        self.log("test_loss",loss)
-        y_hat = F.softmax(y_hat,dim=1)
-        y = y.to(torch.int64)
-        self.log_dict(
-            {
-                "test_acc" :self.test_acc(y_hat,y),
-                "test_precision" : self.test_preci(y_hat,y),
-                "test_recall" : self.test_recall(y_hat,y)
-            },
-            on_epoch=True,
-        )
-        return {"test_loss" : loss}
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
             self.parameters(),
             lr=self.lr,
             )
         return optimizer
-

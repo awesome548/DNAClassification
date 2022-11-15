@@ -37,13 +37,17 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
     """
     num_classes = 3
     dataset_size = 6400
+    data_transform = {
+        'isFormat' : False,
+        'dim' : 1,
+        'length' : 3000,
+    }
 
     idset = glob.glob(target+'/*.txt')
     dataset = glob.glob(inpath+'/*')
 
-    data_module = Dataformat(idset,dataset,dataset_size,cutoff,num_classes).process(batch)
-
-    #torch setting
+    data_module = Dataformat(idset,dataset,dataset_size,cutoff,num_classes,transform=data_transform).process(batch)
+    ### Torch setting ###
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     ### PREPARATION ###
@@ -51,30 +55,18 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
     Training setting
     """
     lr = learningrate
-    # define logger
     wandb_logger = WandbLogger(project="ResNet")
-
     """
     MODEL Select
     """
     useResNet = True
     useLstm = False
-
     """
     Data Format setting
     """
-    inputDim = 1
-    inputLen = 3000
-    hiddenDim = 128
-    outputDim = 2
-    size = {
-        'dim' : inputDim,
-        'length' : inputLen,
-        'num_class' : num_classes
-    }
 
     """
-    CNN setting
+    Parameter setting
     """
     cnn_params = {
         'padd' : 5,
@@ -82,10 +74,6 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
         'stride' : 3,
         'convDim' : 20,
     }
-
-    """
-    LSTM setting
-    """
     lstm_params = {
         'inputDim' : 1,
         'hiddenDim' : 128,
@@ -98,20 +86,8 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
     MODEL architecture
     """
     if useLstm:
-            """
-            LSTM & CNN
-            """
-            #training_set = FormatDataset(ptrain, ntrain,**size)
-            # validation_set = FormatDataset(pval, nval,**size)
-            # test_set = FormatDataset(ptest,ntest,**size)
-            # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
-            ### MODEL ###
-            model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
+        model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
     elif useResNet:
-        """
-        ResNet
-        """
-        # data_module = DataModule(training_set,validation_set,test_set,batch_size=batch)
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
 
 

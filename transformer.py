@@ -6,28 +6,8 @@ from torchmetrics import Accuracy, MetricCollection, Precision,Recall
 import torch.nn.functional as F
 import torch
 import math
-
-### TORCH METRICS ####
-def get_full_metrics(
-    average_method="macro",
-    num_classes=None,
-    prefix=None
-    ):
-    return MetricCollection(
-        [
-            Accuracy(),
-            Precision(
-                average=average_method,
-                num_classes=num_classes,
-            ),
-            Recall(
-                average=average_method,
-                num_classes=num_classes,
-            ),
-        ],
-        prefix= prefix
-    )
-
+from metrics import get_full_metrics
+from process import MyProcess
 
 class PositionalEncoding(nn.Module):
     def __init__(self,max_len: int,d_model: int , dropout: float =0.1):
@@ -137,63 +117,51 @@ class EncoderBlock(nn.Module):
         return x
 
 
-class ViTransformer(pl.LightningModule):
-    def __init__(self,length,n_patches,hiddenDim,classes=2,dropout=0.1,head_num=2,block_num=2,lr=0.001):
+class ViTransformer(MyProcess):
+    def __init__(self,classes,length,dropout=0.1,head_num=2,block_num=6,lr=0.001):
         super(ViTransformer,self).__init__()
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
 
-        convDim = 10
-        inputDim = 1
-        ker = 19
-        padd = 5
-        stride = 3
-
-        self.inputDim = inputDim
-        self.hiddenDim = hiddenDim
+        self.inputDim = 1
         self.block_num = block_num
-        self.convDim = convDim
-        """
-        # 1) convolutional Layer
-        x : [batch_size , convDim, poolLen]
-        """
-        convLen = ((3000+2*padd-ker)/stride) + 1
-        self.poolLen = int(((convLen - 2) / 2) + 1)
+        self.convDim = 20
+
+        self.poolLen = ((length+5*2-19)//3 + 1)//2 + 1
+
         self.conv = nn.Sequential(
-            nn.Conv1d(self.inputDim, self.convDim,kernel_size=ker, padding=padd, stride=stride),
+            nn.Conv1d(1,20,19, padding=5, stride=3),
             nn.BatchNorm1d(20),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, padding=0, stride=2),
+            nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
-        """
-        # 2) learnable classification token
-        output : [batch_size , convDim , poolLen + 1(classification token)] 
-        """
-        self.class_token = nn.Parameter(torch.rand(1,self.hiddenDim))
-
-        self.PE = PositionalEncoding(n_patches+1,self.hiddenDim)
+        self.class_token = nn.Parameter(torch.rand(1,self.convDim))
+        # Class token added 
+        self.PE = PositionalEncoding(self.poolLen+1,self.convDim)
         self.dropout = nn.Dropout(dropout)
-        self.EncoderBlocks = nn.ModuleList([EncoderBlock(self.hiddenDim, head_num) for _ in range(block_num)])
-        self.Classification = nn.Sequential(
-            nn.Linear(self.hiddenDim,classes),
-            nn.Softmax(dim=-1)
-        )
+        self.EncoderBlocks = nn.ModuleList([EncoderBlock(self.convDim, head_num) for _ in range(block_num)])
+        self.Classification = nn.Linear(self.convDim,classes)
         # Metrics
-        self.train_acc = Accuracy(num_classes=2,average="macro")
-        self.valid_acc = Accuracy(num_classes=2,average="macro")
+        self.train_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="train_",
+        )
+        self.valid_metrics = get_full_metrics(
+            num_classes=classes,
+            prefix="valid_",
+        )
         self.test_metrics = get_full_metrics(
             num_classes=classes,
-            prefix="test_"
+            prefix="test_",
         )
         self.save_hyperparameters()
 
+
     def forward(self, inputs):
-
-        tokens = self.linear_mapper(inputs.view(-1,self.n_patches,self.inputDim))
-
-        #adding classification token to the tokens
-        tokens = torch.stack([torch.vstack((self.class_token, tokens[i])) for i in range(len(tokens))])
+        x = self.conv(inputs)
+        x = torch.transpose(x,1,2)
+        tokens = torch.stack([torch.vstack((self.class_token, x[i])) for i in range(len(x))])
         x = self.PE(tokens)
         x = self.dropout(x)
 
@@ -203,58 +171,6 @@ class ViTransformer(pl.LightningModule):
         x = x[:,0]
         return self.Classification(x)
 
-    def training_step(self, batch, batch_idx):
-        # training_step defined the train loop.
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-
-        # Logging to TensorBoard by default
-        self.log("train_loss",loss)
-        self.log(self.train_metrics(y_hat,y.to(torch.int64)))
-        return loss
-
-
-    def validation_step(self, batch, batch_idx):
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-        self.log("valid_loss",loss)
-        self.valid_metrics(y_hat,y.to(torch.int64))
-        self.log_dict(
-            self.valid_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=True,
-            on_step=False,
-        )
-        return {"valid_loss" : loss}
-
-    def validation_end(self, outputs):
-        avg_loss = torch.stack([x["valid_loss"] for x in outputs]).mean()
-        self.log("avg_val__loss",avg_loss)
-        return {"avg_val_loss": avg_loss}
-
-    def test_step(self, batch, batch_idx):
-        # It is independent of forward
-        x, y = batch
-        y_hat = self.forward(x)
-        y_hat = y_hat.to(torch.float32)
-        loss = self.loss_fn(y_hat,y)
-        self.log("test_loss",loss)
-        self.test_metrics(y_hat,y.to(torch.int64))
-        self.log_dict(
-            self.test_metrics,
-            prog_bar=True,
-            logger=True,
-            on_epoch=False,
-            on_step=True,
-        )
-        return {"test_loss" : loss}
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

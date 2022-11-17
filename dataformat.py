@@ -29,7 +29,6 @@ def two_class(idset: list,dataset:list,dataset_size:int,cutoff:int) -> dict:
 
 def three_class(idset: list,dataset:list,dataset_size:int,cutoff:int) -> dict:
     assert len(dataset) == 3
-    dataset_size = 6400
     dataA = Preprocess(idset[0]).process(inpath=dataset[0],cutoff=cutoff,length=dataset_size)
     dataB = Preprocess(idset[1]).process(inpath=dataset[1],cutoff=cutoff,length=dataset_size)
     dataC = Preprocess(idset[2]).process(inpath=dataset[2],cutoff=cutoff,length=dataset_size)
@@ -58,7 +57,6 @@ def three_class(idset: list,dataset:list,dataset_size:int,cutoff:int) -> dict:
 
 def four_class(idset: list,dataset:list,dataset_size:int,cutoff:int) -> dict:
     assert len(dataset) == 4
-    dataset_size = 6400
     dataA = Preprocess(idset[0]).process(inpath=dataset[0],cutoff=cutoff,length=dataset_size)
     dataB = Preprocess(idset[1]).process(inpath=dataset[1],cutoff=cutoff,length=dataset_size)
     dataC = Preprocess(idset[2]).process(inpath=dataset[2],cutoff=cutoff,length=dataset_size)

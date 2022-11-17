@@ -61,7 +61,7 @@ class LstmEncoder(MyProcess):
 
 class CNNLstmEncoder(MyProcess):
 
-    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect,padd,ker,stride,convDim):
+    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect):
         super(CNNLstmEncoder,self).__init__()
 
         #kernel -> samples/base *2
@@ -73,23 +73,23 @@ class CNNLstmEncoder(MyProcess):
         """
         ResNet conv
         """
-        self.convDim = convDim
+        convDim = 20
         self.conv = nn.Sequential(
-            nn.Conv1d(inputDim, self.convDim,kernel_size=ker, padding=padd, stride=stride),
+            nn.Conv1d(inputDim,convDim,kernel_size=19, padding=5, stride=3),
             nn.BatchNorm1d(20),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         #Model Architecture
         if bidirect:
-            self.lstm = nn.LSTM(input_size = self.convDim,
+            self.lstm = nn.LSTM(input_size = convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = True,
                             )
             self.label = nn.Linear(hiddenDim*2, outputDim)
         else:
-            self.lstm = nn.LSTM(input_size = self.convDim,
+            self.lstm = nn.LSTM(input_size = convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             )

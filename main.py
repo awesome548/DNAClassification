@@ -23,24 +23,38 @@ from dataformat import Dataformat
 # Inpath is the taget directory of all dataset
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 
-@click.option('--batch', '-b', default=200, help='Batch size, default 1000')
+@click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
-@click.option('--cutlen', '-c', default=3000, help='Cutting length')
-@click.option('--cutoff', '-co', default=1500, help='Cutting length')
+@click.option('--cutlen', '-cut', default=3000, help='Cutting length')
+@click.option('--cutoff', '-c', default=1500, help='Cutting length')
+@click.option('--classes', '-class', default=3, help='Num of class')
 
 
-def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
+def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
+
+    """
+    Change Preference
+    """
+    project_name = "Cutlen"
+    transform = True
+    useModel = "Transformer"
+    ### MODEL SELECT ###
+    useResNet = False
+    useLstm = False 
+    useTransformer = True
 
     """
     Dataset Preference
     """
-    num_classes = 3
-    dataset_size = 6400
+    num_classes = classes 
+    dataset_size = 7000
+    inputDim = 1
+    inputLen = cutlen
     data_transform = {
-        'isFormat' : False,
-        'dim' : 1,
-        'length' : 3000,
+        'isFormat' : transform,
+        'dim' : inputDim,
+        'length' : inputLen,
     }
 
     idset = glob.glob(target+'/*.txt')
@@ -52,19 +66,24 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
 
     ### PREPARATION ###
     """
-    Training setting
+    Logger setting
     """
     lr = learningrate
-    wandb_logger = WandbLogger(project="ResNet")
+    wandb_logger = WandbLogger(
+        project=project_name,
+        config={
+            "num_clasess": classes,
+            "dataset_size" : dataset_size,
+            "model" : useModel, 
+        },
+        name=useModel+str(num_classes)
+    )
     """
     MODEL Select
     """
-    useResNet = True
-    useLstm = False
-    """
-    Data Format setting
-    """
-
+    useResNet = False
+    useLstm = False 
+    useTransformer = True
     """
     Parameter setting
     """
@@ -75,10 +94,16 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
         'convDim' : 20,
     }
     lstm_params = {
-        'inputDim' : 1,
+        'inputDim' : inputDim,
         'hiddenDim' : 128,
         'outputDim' : num_classes,
         'bidirect' : True
+    }
+    transformer_params = {
+        'classes' : num_classes,
+        'head_num' : 2,
+        'block_num' : 4,
+        'length' : inputLen
     }
 
 
@@ -86,20 +111,13 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
     MODEL architecture
     """
     if useLstm:
-        model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes,**cnn_params)
+        model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes)
     elif useResNet:
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
-
+    elif useTransformer:
+        model = ViTransformer(**transformer_params)
 
     # refine callbacks
-    model_checkpoint = ModelCheckpoint(
-        "logs/",
-        filename="{epoch}-{valid_loss:.4f}",
-        monitor="valid_loss",
-        mode="min",
-        save_top_k=1,
-        save_last=False,
-    )
     early_stopping = EarlyStopping(
         monitor="valid_loss",
         mode="min",
@@ -108,7 +126,7 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff):
 
     trainer = pl.Trainer(
         max_epochs=epoch,
-        min_epochs=20,
+        min_epochs=30,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,

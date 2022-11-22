@@ -1,19 +1,9 @@
-from pyexpat import model
-from unicodedata import bidirectional
-from xml.etree.ElementInclude import include
-from sentry_sdk import configure_scope
 import torch
 import click
 from pytorch_lightning.loggers import WandbLogger
-from torch.utils.data import  random_split
 import pytorch_lightning as pl
-from lstm import LstmEncoder,CNNLstmEncoder
-from transformer import ViTransformer
-from cnn import ResNet, Bottleneck
-from pytorch_lightning.callbacks import ModelCheckpoint
+from models import CNNLstmEncoder,SimpleViT,ResNet,Bottleneck
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from datamodule import DataModule
-from preprocess import Preprocess
 import glob
 from dataformat import Dataformat
 
@@ -128,7 +118,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     elif useResNet:
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen,lr=learningrate)
     elif useTransformer:
-        model = ViTransformer(**transformer_params,lr=learningrate,batch=batch)
+        # model = ViTransformer(**transformer_params,lr=learningrate)
+        model = SimpleViT(**transformer_params,lr=learningrate)
 
     # refine callbacks
     early_stopping = EarlyStopping(

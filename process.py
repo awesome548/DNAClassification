@@ -25,8 +25,8 @@ class MyProcess(pl.LightningModule):
         y_hat = self.forward(x)
         loss = self.loss_fn(y_hat,y)
         
-        y_hat = F.softmax(y_hat,dim=1)
         y = y.to(torch.int64)
+        y_hat = F.softmax(y_hat,dim=1)
         self.log("valid_loss",loss)
         self.valid_metrics(y_hat,y)
         self.log_dict(self.valid_metrics,on_epoch=False,on_step=True)

@@ -118,11 +118,12 @@ class EncoderBlock(nn.Module):
 
 
 class ViTransformer(MyProcess):
-    def __init__(self,classes,length,dropout=0.1,head_num=2,block_num=6,lr=0.001):
+    def __init__(self,classes,length,head_num,block_num,lr,batch,dropout=0.1):
         super(ViTransformer,self).__init__()
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
+        self.classes = classes
 
         self.inputDim = 1
         self.block_num = block_num
@@ -136,12 +137,12 @@ class ViTransformer(MyProcess):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
-        self.class_token = nn.Parameter(torch.rand(1,self.convDim))
+        self.class_token = nn.Parameter(torch.rand(batch,self.convDim,1))
         # Class token added 
         self.PE = PositionalEncoding(self.poolLen+1,self.convDim)
         self.dropout = nn.Dropout(dropout)
         self.EncoderBlocks = nn.ModuleList([EncoderBlock(self.convDim, head_num) for _ in range(block_num)])
-        self.Classification = nn.Linear(self.convDim,classes)
+        self.fc = nn.Linear(self.convDim,self.classes)
         # Metrics
         self.train_metrics = get_full_metrics(
             num_classes=classes,
@@ -160,17 +161,16 @@ class ViTransformer(MyProcess):
 
     def forward(self, inputs):
         x = self.conv(inputs)
+        x = torch.cat([self.class_token,x],dim=2)
         x = torch.transpose(x,1,2)
-        tokens = torch.stack([torch.vstack((self.class_token, x[i])) for i in range(len(x))])
-        x = self.PE(tokens)
+        x = self.PE(x)
         x = self.dropout(x)
 
         for i in range(self.block_num):
             x = self.EncoderBlocks[i](x)
 
-        x = x[:,0]
-        return self.Classification(x)
-
+        y_hat = self.fc(x[:,0])
+        return y_hat
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

@@ -22,27 +22,39 @@ from dataformat import Dataformat
 @click.option('--target', '-t', help='The path of positive sequence training set', type=click.Path(exists=True))
 # Inpath is the taget directory of all dataset
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
+@click.option('--arch', '-a', help='The path of positive sequence training set')
 
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
-@click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
-@click.option('--cutlen', '-cut', default=3000, help='Cutting length')
-@click.option('--cutoff', '-c', default=1500, help='Cutting length')
+@click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
+@click.option('--cutlen', '-len', default=3000, help='Cutting length')
+@click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=3, help='Num of class')
 
 
-def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
+def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
 
     """
     Change Preference
     """
-    project_name = "Cutlen"
-    transform = True
-    useModel = "Transformer"
+    project_name = "ResNet"
+
     ### MODEL SELECT ###
     useResNet = False
-    useLstm = False 
-    useTransformer = True
+    useTransformer = False
+    useLstm = False
+    if "ResNet" in str(arch):
+        transform = False 
+        useResNet = True
+    elif "LSTM" in str(arch):
+        transform = True
+        useLstm = True 
+    else:
+        assert str(arch) == "Transformer"
+        transform = True
+        useTransformer = True 
+    useModel = arch 
+    #####################
 
     """
     Dataset Preference
@@ -50,17 +62,24 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
     num_classes = classes 
     dataset_size = 7000
     inputDim = 1
-    inputLen = cutlen
     data_transform = {
         'isFormat' : transform,
         'dim' : inputDim,
-        'length' : inputLen,
+        'length' : cutlen,
+    }
+    cut_size = {
+        'cutoff' : cutoff,
+        'cutlen' : cutlen,
+        'maxlen' : 10000,  
+        'stride' : 5000,
     }
 
     idset = glob.glob(target+'/*.txt')
     dataset = glob.glob(inpath+'/*')
 
-    data_module = Dataformat(idset,dataset,dataset_size,cutoff,num_classes,transform=data_transform).process(batch)
+    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=num_classes,transform=data_transform)
+    data_module = data.process(batch)
+    dataset_size = data.size()
     ### Torch setting ###
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -68,22 +87,16 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
     """
     Logger setting
     """
-    lr = learningrate
     wandb_logger = WandbLogger(
         project=project_name,
         config={
             "num_clasess": classes,
             "dataset_size" : dataset_size,
             "model" : useModel, 
+            "cutlen" : cutlen,
         },
-        name=useModel+str(num_classes)
+        name=useModel+"_"+str(num_classes)+"_"+str(cutlen)
     )
-    """
-    MODEL Select
-    """
-    useResNet = False
-    useLstm = False 
-    useTransformer = True
     """
     Parameter setting
     """
@@ -101,9 +114,9 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
     }
     transformer_params = {
         'classes' : num_classes,
-        'head_num' : 2,
+        'head_num' : 4,
         'block_num' : 4,
-        'length' : inputLen
+        'length' : cutlen 
     }
 
 
@@ -111,11 +124,11 @@ def main(target,inpath, batch, epoch, learningrate,cutlen,cutoff,classes):
     MODEL architecture
     """
     if useLstm:
-        model = CNNLstmEncoder(**lstm_params,lr=lr,classes=num_classes)
+        model = CNNLstmEncoder(**lstm_params,lr=learningrate,classes=num_classes)
     elif useResNet:
-        model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen)
+        model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen,lr=learningrate)
     elif useTransformer:
-        model = ViTransformer(**transformer_params)
+        model = ViTransformer(**transformer_params,lr=learningrate,batch=batch)
 
     # refine callbacks
     early_stopping = EarlyStopping(

@@ -64,7 +64,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(MyProcess):
-    def __init__(self, block, layers, cutlen,classes,lr=0.01):
+    def __init__(self, block, layers, cutlen,classes,lr):
         super(ResNet, self).__init__()
         self.chan1 = 20
 

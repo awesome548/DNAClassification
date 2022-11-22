@@ -68,7 +68,7 @@ class CNNLstmEncoder(MyProcess):
         #stride -> samples/base
 
         self.lr = lr
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
         """
         ResNet conv

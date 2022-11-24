@@ -14,8 +14,6 @@ class MyProcess(pl.LightningModule):
         y_hat = F.softmax(y_hat,dim=1)
         y = y.to(torch.int64)
         self.log("train_loss",loss)
-        self.train_metrics(y_hat,y)
-        self.log_dict(self.train_metrics,on_epoch=False,on_step=True)
         return loss
 
 
@@ -28,8 +26,6 @@ class MyProcess(pl.LightningModule):
         y = y.to(torch.int64)
         y_hat = F.softmax(y_hat,dim=1)
         self.log("valid_loss",loss)
-        self.valid_metrics(y_hat,y)
-        self.log_dict(self.valid_metrics,on_epoch=False,on_step=True)
         return {"valid_loss" : loss}
 
     def validation_end(self, outputs):
@@ -42,10 +38,8 @@ class MyProcess(pl.LightningModule):
         x, y = batch
         y_hat = self.forward(x)
         loss = self.loss_fn(y_hat,y)
-        
         y_hat = F.softmax(y_hat,dim=1)
         y = y.to(torch.int64)
         self.log("test_loss",loss)
-        self.test_metrics(y_hat,y)
-        self.log_dict(self.test_metrics,on_epoch=True,on_step=False)
+        self.log_dict(self.metrics(y_hat,y))
         return {"test_loss" : loss}

@@ -1,29 +1,16 @@
-from torchmetrics import Accuracy, MetricCollection, Precision,Recall
+from torchmetrics import MetricCollection
+
+from torchmetrics.classification import MultilabelAccuracy,MultilabelRecall,MultilabelPrecision
+
 def get_full_metrics(
-    threshold=0.5,
-    average_method="macro",
-    num_classes=None,
+    classes=None,
     prefix=None,
-    ignore_index=None,
 ):
     return MetricCollection(
         [
-            Accuracy(
-                threshold=threshold,
-                ignore_index=ignore_index,
-            ),
-            Precision(
-                threshold=threshold,
-                average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
-            ),
-            Recall(
-                threshold=threshold,
-                average=average_method,
-                num_classes=num_classes,
-                ignore_index=ignore_index,
-            ),
+            MultilabelAccuracy(num_labels=classes),
+            MultilabelRecall(num_labels=classes),
+            MultilabelPrecision(num_labels=classes),
         ],
         prefix= prefix
     )

@@ -1,13 +1,7 @@
-from unicodedata import bidirectional
 import torch.nn as nn
-import pytorch_lightning as pl
-from torch.optim import SGD, Adam
-from torchmetrics import Accuracy, MetricCollection, Recall,ConfusionMatrix,Precision
-import torch.nn.functional as F
 import torch
-import math
-from process import MyProcess
-from metrics import get_full_metrics
+from models.process import MyProcess
+from models.metrics import get_full_metrics
 
 ### CREATE MODEL ###
 class LstmEncoder(MyProcess):
@@ -95,18 +89,7 @@ class CNNLstmEncoder(MyProcess):
                             )
             self.label = nn.Linear(hiddenDim, outputDim)
 
-        self.train_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="valid_",
-        )
-        self.test_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="test_",
-        )
+        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 
     def forward(self, inputs,hidden0=None):

@@ -1,8 +1,8 @@
-from preprocess import Preprocess
+from preprocess.preprocess import Preprocess,calu_size
 import torch
-from dataset import MultiDataset
-from datamodule import DataModule
-from preprocess import calu_size
+from dataset.dataset import MultiDataset
+from dataset.datamodule import DataModule
+
 def two_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     assert len(dataset) == 2
 

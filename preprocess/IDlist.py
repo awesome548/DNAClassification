@@ -1,10 +1,6 @@
-import time
-import torch
 import click
 import os
 import glob
-import numpy as np
-from scipy import stats
 from ont_fast5_api.fast5_interface import get_fast5_file
 
 

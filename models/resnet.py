@@ -1,14 +1,7 @@
 import torch
-from torch.optim import Adam
-from torch.nn import CrossEntropyLoss
-from torch.nn import functional as F
-from unicodedata import bidirectional
 import torch.nn as nn
-import pytorch_lightning as pl
-import torch.nn.functional as F
-import math
-from process import MyProcess
-from metrics import get_full_metrics
+from models.process import MyProcess
+from models.metrics import get_full_metrics
 
 ### TORCH METRICS ####
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):
@@ -85,17 +78,9 @@ class ResNet(MyProcess):
         self.layer2 = self._make_layer(block, 30, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
-        self.train_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="valid_",
-        )
-        self.test_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="test_",
+        self.metrics = get_full_metrics(
+            classes=classes,
+            prefix="Test_",
         )
         self.save_hyperparameters()
 

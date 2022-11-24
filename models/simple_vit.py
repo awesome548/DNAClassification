@@ -1,35 +1,30 @@
-from unicodedata import bidirectional
 import torch.nn as nn
-import pytorch_lightning as pl
-from torch.optim import SGD, Adam
-from torchmetrics import Accuracy, MetricCollection, Precision,Recall
-import torch.nn.functional as F
 import torch
 import math
-from metrics import get_full_metrics
-from process import MyProcess
-from einops import rearrange
-from einops.layers.torch import Rearrange
+from models.metrics import get_full_metrics
+from models.process import MyProcess
+from einops import rearrange,repeat
+from torchmetrics.functional.classification import multilabel_accuracy
 
-class PositionalEncoding(nn.Module):
-    def __init__(self,max_len: int,d_model: int):
-        super().__init__()
 
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
-        pe = torch.zeros(1, max_len, d_model)
-        pe[0, :, 0::2] = torch.sin(position * div_term)
-        pe[0, :, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
+def positionalencoding1d(x,dtype = torch.float32):
+    """
+    :param d_model: dimension of the model
+    :param length: length of positions
+    :return: length*d_model position matrix
+    """
+    _,length,d_model,device,dtype= *x.shape, x.device,x.dtype
+    if d_model % 2 != 0:
+        raise ValueError("Cannot use sin/cos positional encoding with "
+                         "odd dim (got dim={:d})".format(d_model))
+    pe = torch.zeros(length, d_model,device=device)
+    position = torch.arange(0, length).unsqueeze(1)
+    div_term = torch.exp((torch.arange(0, d_model, 2, dtype=torch.float) *
+                         -(math.log(10000.0) / d_model)))
+    pe[:, 0::2] = torch.sin(position.float() * div_term)
+    pe[:, 1::2] = torch.cos(position.float() * div_term)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: Tensor, shape [batch_size, max_len, embedding_dim]
-        """
-        x = x + self.pe[:x.size(0)]
-        return x
-
+    return pe.type(dtype)
 
 class Attention(nn.Module):
     def __init__(self, dim, heads, dim_head = 64):
@@ -96,17 +91,12 @@ class SimpleViT(MyProcess):
         self.classes = classes
 
         self.convDim = 20
-
-        self.poolLen = ((length+5*2-19)//3 + 1)//2 + 1
-
         self.conv = nn.Sequential(
             nn.Conv1d(1,20,19, padding=5, stride=3),
             nn.BatchNorm1d(20),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
-        self.PE = PositionalEncoding(self.poolLen,self.convDim)
-
         self.transformer = Transformer(self.convDim,block_num,head_num,dim_head,mlp_dim)
         self.to_latent = nn.Identity()
         self.linear_head = nn.Sequential(
@@ -114,29 +104,19 @@ class SimpleViT(MyProcess):
             nn.Linear(self.convDim,classes)
         )
 
-
-
         # Metrics
-        self.train_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="valid_",
-        )
-        self.test_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="test_",
-        )
+        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 
 
     def forward(self, inputs):
+        b,_,_ = inputs.shape
         x = self.conv(inputs)
         x = torch.transpose(x,1,2)
         ### x = [b, len , dim]
-        x = self.PE(x)
+        pe = positionalencoding1d(x)
+        pe = repeat(pe,'l d -> b l d',b=b)
+        x = x + pe
 
         x = self.transformer(x)
         x = x.mean(dim = 1)

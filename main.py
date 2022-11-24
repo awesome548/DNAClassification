@@ -2,10 +2,12 @@ import torch
 import click
 from pytorch_lightning.loggers import WandbLogger
 import pytorch_lightning as pl
-from models import CNNLstmEncoder,SimpleViT,ResNet,Bottleneck
+from models.cnnlstm import CNNLstmEncoder
+from models.simple_vit import SimpleViT
+from models.resnet import ResNet,Bottleneck
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import glob
-from dataformat import Dataformat
+from preprocess.dataformat import Dataformat
 
 
 @click.command()
@@ -14,8 +16,8 @@ from dataformat import Dataformat
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
-@click.option('--batch', '-b', default=100, help='Batch size, default 1000')
-@click.option('--epoch', '-e', default=40, help='Number of epoches, default 20')
+@click.option('--batch', '-b', default=216, help='Batch size, default 1000')
+@click.option('--epoch', '-e', default=50, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
@@ -27,7 +29,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     """
     Change Preference
     """
-    project_name = "ResNet"
+    project_name = "test"
 
     ### MODEL SELECT ###
     useResNet = False
@@ -105,7 +107,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     transformer_params = {
         'classes' : num_classes,
         'head_num' : 4,
-        'block_num' : 4,
+        'block_num' : 6,
         'length' : cutlen 
     }
 
@@ -141,6 +143,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
         model,
         datamodule=data_module,
     )
+    # model.state_dict().keys()
+    # model.load_from_checkpoint("test/1bryou8e/checkpoints/epoch=19-step=3120.ckpt")
     trainer.test(
         model,
         datamodule=data_module,

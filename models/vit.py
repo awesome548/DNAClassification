@@ -75,13 +75,13 @@ class MultiHeadAttention(nn.Module):
 
 
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.1):
+    def __init__(self, dim, mlp_dim, dropout = 0.1):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(dim, hidden_dim),
+            nn.Linear(dim, mlp_dim),
             nn.GELU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_dim, dim),
+            nn.Linear(mlp_dim, dim),
             nn.Dropout(dropout)
         )
     def forward(self, x):
@@ -89,31 +89,31 @@ class FeedForward(nn.Module):
 
 
 class EncoderBlock(nn.Module):
-    def __init__(self, dim, head_num, dropout = 0.1):
+    def __init__(self, dim, head_num,mlp_dim, dropout = 0.1):
         super().__init__()
         self.MHA = MultiHeadAttention(dim, head_num)
         self.layer_norm_1 = nn.LayerNorm([dim])
         self.layer_norm_2 = nn.LayerNorm([dim])
-        self.FF = FeedForward(dim)
+        self.FF = FeedForward(dim,mlp_dim)
         self.dropout_1 = nn.Dropout(dropout)
         self.dropout_2 = nn.Dropout(dropout)
 
     def forward(self, x):
         Q = K = V = x
         x = self.MHA(Q, K, V)
-        x = self.dropout_1(x)
+        #x = self.dropout_1(x)
         x = x + Q
         x = self.layer_norm_1(x)
         _x = x
         x = self.FF(x)
-        x = self.dropout_2(x)
+        #x = self.dropout_2(x)
         x = x + _x
         x = self.layer_norm_2(x)
         return x
 
-class ViTransformer(MyProcess):
+class ViT(MyProcess):
     def __init__(self,classes,length,head_num,lr,block_num=6,dim_head=64,mlp_dim=2048):
-        super(ViTransformer,self).__init__()
+        super(ViT,self).__init__()
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
@@ -131,11 +131,11 @@ class ViTransformer(MyProcess):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
-        self.cls_token = nn.Parameter(torch.randn(1,1,self.convDim))
+        self.cls_token = nn.Parameter(torch.rand(1,self.convDim))
         # Class token added 
         self.PE = PositionalEncoding(self.poolLen+1,self.convDim)
 
-        self.EncoderBlocks = nn.ModuleList([EncoderBlock(self.convDim, head_num) for _ in range(block_num)])
+        self.EncoderBlocks = nn.ModuleList([EncoderBlock(self.convDim, head_num,mlp_dim) for _ in range(block_num)])
         
         self.fc = nn.Linear(self.convDim,self.classes)
         # Metrics
@@ -148,9 +148,8 @@ class ViTransformer(MyProcess):
         x = torch.transpose(x,1,2)
         ### x = [b, len , dim]
         b,_,_ = x.shape
-        cls_tokens = repeat(self.cls_token,'1 1 d -> b 1 d',b = b)
-        x = torch.cat([self.class_token,x],dim=1)
-        x = self.PE(x)
+        tokens = torch.stack([torch.vstack((self.cls_token, x[i])) for i in range(len(x))])
+        x = self.PE(tokens)
 
         for i in range(self.block_num):
             x = self.EncoderBlocks[i](x)

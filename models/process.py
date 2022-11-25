@@ -8,11 +8,10 @@ class MyProcess(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
+        y =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
         loss = self.loss_fn(y_hat,y)
 
         # Logging to TensorBoard by default
-        y_hat = F.softmax(y_hat,dim=1)
-        y = y.to(torch.int64)
         self.log("train_loss",loss)
         return loss
 
@@ -21,10 +20,9 @@ class MyProcess(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
+        y =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
         loss = self.loss_fn(y_hat,y)
         
-        y = y.to(torch.int64)
-        y_hat = F.softmax(y_hat,dim=1)
         self.log("valid_loss",loss)
         return {"valid_loss" : loss}
 
@@ -37,9 +35,10 @@ class MyProcess(pl.LightningModule):
         # It is independent of forward
         x, y = batch
         y_hat = self.forward(x)
-        loss = self.loss_fn(y_hat,y)
-        y_hat = F.softmax(y_hat,dim=1)
-        y = y.to(torch.int64)
+        y_float =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
+        loss = self.loss_fn(y_hat,y_float)
+        
+        y_hat_index = y_hat.max(dim=1).indices
         self.log("test_loss",loss)
-        self.log_dict(self.metrics(y_hat,y))
+        self.log_dict(self.metrics(y_hat_index,y))
         return {"test_loss" : loss}

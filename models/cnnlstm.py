@@ -63,6 +63,7 @@ class CNNLstmEncoder(MyProcess):
 
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
+        self.classes = classes
 
         """
         ResNet conv

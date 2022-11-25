@@ -2,9 +2,7 @@ import torch
 import click
 from pytorch_lightning.loggers import WandbLogger
 import pytorch_lightning as pl
-from models.cnnlstm import CNNLstmEncoder
-from models.simple_vit import SimpleViT
-from models.resnet import ResNet,Bottleneck
+from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import glob
 from preprocess.dataformat import Dataformat
@@ -16,7 +14,7 @@ from preprocess.dataformat import Dataformat
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
-@click.option('--batch', '-b', default=216, help='Batch size, default 1000')
+@click.option('--batch', '-b', default=128, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=50, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
@@ -29,7 +27,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     """
     Change Preference
     """
-    project_name = "test"
+    project_name = "transformer debug"
 
     ### MODEL SELECT ###
     useResNet = False
@@ -106,9 +104,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     }
     transformer_params = {
         'classes' : num_classes,
-        'head_num' : 4,
-        'block_num' : 6,
-        'length' : cutlen 
+        'heads' : 4,
+        'depth' : 6,
     }
 
 
@@ -120,8 +117,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     elif useResNet:
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen,lr=learningrate)
     elif useTransformer:
-        # model = ViTransformer(**transformer_params,lr=learningrate)
-        model = SimpleViT(**transformer_params,lr=learningrate)
+        model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
+        # model = SimpleViT(**transformer_params,lr=learningrate)
 
     # refine callbacks
     early_stopping = EarlyStopping(
@@ -132,7 +129,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
 
     trainer = pl.Trainer(
         max_epochs=epoch,
-        min_epochs=30,
+        min_epochs=40,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
@@ -144,7 +141,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
         datamodule=data_module,
     )
     # model.state_dict().keys()
-    # model.load_from_checkpoint("test/1bryou8e/checkpoints/epoch=19-step=3120.ckpt")
+    # model.load_from_checkpoint("test/2rud3fao/checkpoints/epoch=31-step=4992.ckpt")
     trainer.test(
         model,
         datamodule=data_module,

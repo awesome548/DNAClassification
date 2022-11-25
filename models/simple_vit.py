@@ -13,18 +13,18 @@ def positionalencoding1d(x,dtype = torch.float32):
     :param length: length of positions
     :return: length*d_model position matrix
     """
-    _,length,d_model,device,dtype= *x.shape, x.device,x.dtype
-    if d_model % 2 != 0:
+    _,l,d,device,dtype= *x.shape, x.device,x.dtype
+    if d % 2 != 0:
         raise ValueError("Cannot use sin/cos positional encoding with "
-                         "odd dim (got dim={:d})".format(d_model))
-    pe = torch.zeros(length, d_model,device=device)
-    position = torch.arange(0, length).unsqueeze(1)
-    div_term = torch.exp((torch.arange(0, d_model, 2, dtype=torch.float) *
-                         -(math.log(10000.0) / d_model)))
+                         "odd dim (got dim={:d})".format(d))
+    pe = torch.zeros(l, d,device=device)
+    position = torch.arange(0, l).unsqueeze(1)
+    div_term = torch.exp((torch.arange(0, d, 2, dtype=torch.float) * -(math.log(10000.0) / d)))
     pe[:, 0::2] = torch.sin(position.float() * div_term)
     pe[:, 1::2] = torch.cos(position.float() * div_term)
 
     return pe.type(dtype)
+
 
 class Attention(nn.Module):
     def __init__(self, dim, heads, dim_head = 64):
@@ -83,12 +83,11 @@ class Transformer(nn.Module):
         return x
 
 class SimpleViT(MyProcess):
-    def __init__(self,classes,length,head_num,lr,block_num=6,dim_head=64,mlp_dim=2048):
+    def __init__(self,classes,head_num,lr,block_num=6,dim_head=64,mlp_dim=2048):
         super(SimpleViT,self).__init__()
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
-        self.classes = classes
 
         self.convDim = 20
         self.conv = nn.Sequential(
@@ -97,6 +96,8 @@ class SimpleViT(MyProcess):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
+
+        self.cls_tolken = nn.Parameter(torch.randn(1,self.convDim))
         self.transformer = Transformer(self.convDim,block_num,head_num,dim_head,mlp_dim)
         self.to_latent = nn.Identity()
         self.linear_head = nn.Sequential(
@@ -104,6 +105,7 @@ class SimpleViT(MyProcess):
             nn.Linear(self.convDim,classes)
         )
 
+        self.classes = classes
         # Metrics
         self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
@@ -114,14 +116,15 @@ class SimpleViT(MyProcess):
         x = self.conv(inputs)
         x = torch.transpose(x,1,2)
         ### x = [b, len , dim]
+
         pe = positionalencoding1d(x)
         pe = repeat(pe,'l d -> b l d',b=b)
         x = x + pe
 
         x = self.transformer(x)
-        x = x.mean(dim = 1)
-        x = self.to_latent(x)
-        return self.linear_head(x)
+        x_ = x.mean(dim = 1)
+        x__ = self.to_latent(x_)
+        return self.linear_head(x__)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

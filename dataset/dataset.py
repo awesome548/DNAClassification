@@ -43,15 +43,14 @@ class MultiDataset(torch.utils.data.Dataset):
 
             if num_class == 2:
                   self.data = double_data(**data,**transform)
-                  labels = double_labels(**data)
+                  self.label = double_labels(**data)
             elif num_class == 3:
                   self.data = triple_data(**data,**transform)
-                  labels = triple_labels(**data)
+                  self.label = triple_labels(**data)
             elif num_class == 4:
                   self.data = quad_data(**data,**transform)
-                  labels = quad_labels(**data)
+                  self.label = quad_labels(**data)
             
-            self.label = F.one_hot(labels,num_classes=num_class).to(torch.float32)
       
       def __len__(self):
             return len(self.label)

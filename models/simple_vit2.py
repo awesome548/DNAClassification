@@ -1,74 +1,91 @@
 import torch
 from torch import nn
-
+import math
+from einops import rearrange
+from einops.layers.torch import Rearrange
 from models.metrics import get_full_metrics
 from models.process import MyProcess
-from einops import rearrange, repeat
-from einops.layers.torch import Rearrange
+
+def posemb_sincos_1d(x,dtype = torch.float32):
+    """
+    :param d_model: dimension of the model
+    :param length: length of positions
+    :return: length*d_model position matrix
+    """
+    _,l,d,device,dtype= *x.shape, x.device,x.dtype
+    if d % 2 != 0:
+        raise ValueError("Cannot use sin/cos positional encoding with "
+                         "odd dim (got dim={:d})".format(d))
+    pe = torch.zeros(l, d,device=device)
+    position = torch.arange(0, l).unsqueeze(1)
+    div_term = torch.exp((torch.arange(0, d, 2, dtype=torch.float) * -(math.log(10000.0) / d)))
+    pe[:, 0::2] = torch.sin(position.float() * div_term)
+    pe[:, 1::2] = torch.cos(position.float() * div_term)
+
+    return pe.type(dtype)
+
+def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
+    _, h, w, dim, device, dtype = *patches.shape, patches.device, patches.dtype
+
+    y, x = torch.meshgrid(torch.arange(h, device = device), torch.arange(w, device = device), indexing = 'ij')
+    assert (dim % 4) == 0, 'feature dimension must be multiple of 4 for sincos emb'
+    omega = torch.arange(dim // 4, device = device) / (dim // 4 - 1)
+    omega = 1. / (temperature ** omega)
+
+    y = y.flatten()[:, None] * omega[None, :]
+    x = x.flatten()[:, None] * omega[None, :] 
+    pe = torch.cat((x.sin(), x.cos(), y.sin(), y.cos()), dim = 1)
+    return pe.type(dtype)
 
 # classes
 
-class PreNorm(nn.Module):
-    def __init__(self, dim, fn):
-        super().__init__()
-        self.norm = nn.LayerNorm(dim)
-        self.fn = fn
-    def forward(self, x, **kwargs):
-        return self.fn(self.norm(x), **kwargs)
-
 class FeedForward(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
+    def __init__(self, dim, hidden_dim):
         super().__init__()
         self.net = nn.Sequential(
+            nn.LayerNorm(dim),
             nn.Linear(dim, hidden_dim),
             nn.GELU(),
-            nn.Dropout(dropout),
             nn.Linear(hidden_dim, dim),
-            nn.Dropout(dropout)
         )
     def forward(self, x):
         return self.net(x)
 
 class Attention(nn.Module):
-    def __init__(self, dim, heads = 8, dim_head = 64, dropout = 0.):
+    def __init__(self, dim, heads = 8, dim_head = 64):
         super().__init__()
         inner_dim = dim_head *  heads
-        project_out = not (heads == 1 and dim_head == dim)
-
         self.heads = heads
         self.scale = dim_head ** -0.5
+        self.norm = nn.LayerNorm(dim)
 
         self.attend = nn.Softmax(dim = -1)
-        self.dropout = nn.Dropout(dropout)
 
         self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
-
-        self.to_out = nn.Sequential(
-            nn.Linear(inner_dim, dim),
-            nn.Dropout(dropout)
-        ) if project_out else nn.Identity()
+        self.to_out = nn.Linear(inner_dim, dim, bias = False)
 
     def forward(self, x):
+        x = self.norm(x)
+
         qkv = self.to_qkv(x).chunk(3, dim = -1)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), qkv)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
         attn = self.attend(dots)
-        attn = self.dropout(attn)
 
         out = torch.matmul(attn, v)
         out = rearrange(out, 'b h n d -> b n (h d)')
         return self.to_out(out)
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim, dropout = 0.):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
         super().__init__()
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                PreNorm(dim, Attention(dim, heads = heads, dim_head = dim_head, dropout = dropout)),
-                PreNorm(dim, FeedForward(dim, mlp_dim, dropout = dropout))
+                Attention(dim, heads = heads, dim_head = dim_head),
+                FeedForward(dim, mlp_dim)
             ]))
     def forward(self, x):
         for attn, ff in self.layers:
@@ -76,15 +93,15 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
-class ViT2(MyProcess):
-    def __init__(self, length,classes, depth, heads,lr, mlp_dim=1024, pool = 'cls', dim_head = 64, dropout = 0.1, emb_dropout = 0.1):
+class SimpleViT2(MyProcess):
+    def __init__(self, classes, depth, heads, lr,mlp_dim=1024, dim_head = 64):
         super().__init__()
+
         self.loss_fn = nn.CrossEntropyLoss()
         self.lr = lr
         self.classes = classes
 
         dim = 20
-        poolLen = ((length+5*2-19)//3 + 1)//2 + 1
 
         self.conv = nn.Sequential(
             nn.Conv1d(1,dim,19, padding=5, stride=3),
@@ -92,17 +109,10 @@ class ViT2(MyProcess):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         ) 
+        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim)
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, poolLen + 1, dim))
-        self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
-        self.dropout = nn.Dropout(emb_dropout)
-
-        self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)
-
-        self.pool = pool
         self.to_latent = nn.Identity()
-
-        self.mlp_head = nn.Sequential(
+        self.linear_head = nn.Sequential(
             nn.LayerNorm(dim),
             nn.Linear(dim, classes)
         )
@@ -111,21 +121,17 @@ class ViT2(MyProcess):
         self.save_hyperparameters()
 
     def forward(self, inputs):
+
         x = self.conv(inputs)
         x = torch.transpose(x,1,2)
-        b, n, _ = x.shape
-
-        cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b = b)
-        x = torch.cat((cls_tokens, x), dim=1)
-        x += self.pos_embedding[:, :(n + 1)]
-        x = self.dropout(x)
+        pe = posemb_sincos_1d(x)
+        x = x + pe
 
         x = self.transformer(x)
-
-        x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
+        x = x.mean(dim = 1)
 
         x = self.to_latent(x)
-        return self.mlp_head(x)
+        return self.linear_head(x)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

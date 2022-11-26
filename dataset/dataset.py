@@ -51,6 +51,7 @@ class MultiDataset(torch.utils.data.Dataset):
                   self.data = quad_data(**data,**transform)
                   self.label = quad_labels(**data)
             
+            # self.label = F.one_hot(labels,num_classes=num_class).to(torch.float32)
       
       def __len__(self):
             return len(self.label)

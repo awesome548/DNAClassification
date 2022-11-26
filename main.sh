@@ -14,8 +14,11 @@ model=$1
 #python IDlist.py -t ${src_dir}/${positive} -o ${id_dir} -f $positive -cut ${cutlen}
 
 #TRAIN
-for i in 2000 3000 4000 5000;do
-    for j in ResNet LSTM Transformer;do
-        python main.py -t $id_dir -i $src_dir -class $class -len $i -a $j
-    done
+for i in 2000 3000 4000;do
+    python main.py -t $id_dir -i $src_dir -class $class -len $i -a Transformer -e 100 
 done
+#for i in 2000 3000 4000 5000;do
+    #for j in ResNet LSTM Transformer;do
+        #python main.py -t $id_dir -i $src_dir -class $class -len $i -a $j
+    #done
+#done

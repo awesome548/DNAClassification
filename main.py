@@ -2,7 +2,7 @@ import torch
 import click
 from pytorch_lightning.loggers import WandbLogger
 import pytorch_lightning as pl
-from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2
+from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import glob
 from preprocess.dataformat import Dataformat
@@ -117,8 +117,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
     elif useResNet:
         model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen,lr=learningrate)
     elif useTransformer:
-        model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
-        # model = SimpleViT(**transformer_params,lr=learningrate)
+        # model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
+        model = SimpleViT2(**transformer_params,lr=learningrate)
 
     # refine callbacks
     early_stopping = EarlyStopping(
@@ -129,7 +129,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
 
     trainer = pl.Trainer(
         max_epochs=epoch,
-        min_epochs=40,
+        min_epochs=60,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,

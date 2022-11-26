@@ -11,7 +11,6 @@ class MyProcess(pl.LightningModule):
         y =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
         loss = self.loss_fn(y_hat,y)
 
-        # Logging to TensorBoard by default
         self.log("train_loss",loss)
         return loss
 

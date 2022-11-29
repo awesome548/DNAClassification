@@ -1,6 +1,4 @@
 import torch
-from torch.utils.data.dataset import Dataset
-import torch.nn.functional as F
 
 def double_data(a:torch.Tensor,b:torch.Tensor,isFormat:bool,dim:int,length:int):
       if isFormat:
@@ -32,9 +30,11 @@ def quad_data(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor,d:torch.Tensor,isForm
             return torch.cat((a,b,c,d))
 
 def quad_labels(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor,d:torch.Tensor):
-      a_labels = torch.zeros(a.shape[0])
+      #a_labels = torch.zeros(a.shape[0])
+      a_labels = torch.ones(a.shape[0])*2
       b_labels = torch.ones(b.shape[0])
-      c_labels = torch.ones(c.shape[0])*2
+      #c_labels = torch.ones(c.shape[0])*2
+      c_labels = torch.zeros(c.shape[0])
       d_labels = torch.ones(d.shape[0])*3
       return (torch.cat((a_labels,b_labels,c_labels,d_labels),dim=0).clone().detach()).to(torch.int64)
 
@@ -50,9 +50,9 @@ class MultiDataset(torch.utils.data.Dataset):
             elif num_class == 4:
                   self.data = quad_data(**data,**transform)
                   self.label = quad_labels(**data)
-            
+
             # self.label = F.one_hot(labels,num_classes=num_class).to(torch.float32)
-      
+
       def __len__(self):
             return len(self.label)
 
@@ -60,4 +60,4 @@ class MultiDataset(torch.utils.data.Dataset):
             X = self.data[index]
             y = self.label[index]
             return X, y
-      
+

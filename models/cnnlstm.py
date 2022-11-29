@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 from models.process import MyProcess
 from models.metrics import get_full_metrics
+import numpy as np
 
 ### CREATE MODEL ###
 class LstmEncoder(MyProcess):
@@ -90,6 +91,13 @@ class CNNLstmEncoder(MyProcess):
                             )
             self.label = nn.Linear(hiddenDim, outputDim)
 
+        self.acc = np.array([])
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }
         self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 

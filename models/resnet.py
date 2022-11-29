@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from models.process import MyProcess
 from models.metrics import get_full_metrics
+import numpy as np
 
 ### TORCH METRICS ####
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):
@@ -74,6 +75,13 @@ class ResNet(MyProcess):
         self.loss_fn = nn.CrossEntropyLoss()
         self.cutlen = cutlen
 
+        self.acc = np.array([]) 
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }
         self.layer1 = self._make_layer(block, 20, layers[0])
         self.layer2 = self._make_layer(block, 30, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)

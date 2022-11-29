@@ -5,6 +5,7 @@ from einops import rearrange
 from einops.layers.torch import Rearrange
 from models.metrics import get_full_metrics
 from models.process import MyProcess
+import numpy as np
 
 def posemb_sincos_1d(x,dtype = torch.float32):
     """
@@ -116,7 +117,13 @@ class SimpleViT2(MyProcess):
             nn.LayerNorm(dim),
             nn.Linear(dim, classes)
         )
-        # Metrics
+        self.acc = np.array([])   
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }       # Metrics
         self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 

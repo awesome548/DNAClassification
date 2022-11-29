@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import glob
-from preprocess.dataformat import Dataformat
+from dataset.dataformat import Dataformat
 
 
 @click.command()
@@ -16,18 +16,19 @@ from preprocess.dataformat import Dataformat
 
 @click.option('--batch', '-b', default=128, help='Batch size, default 1000')
 @click.option('--epoch', '-e', default=50, help='Number of epoches, default 20')
+@click.option('--minepoch', '-me', default=50, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=3, help='Num of class')
 
 
-def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
+def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,classes):
 
     """
     Change Preference
     """
-    project_name = "transformer debug"
+    project_name = "CABD epoch sensitivity"
 
     ### MODEL SELECT ###
     useResNet = False
@@ -85,7 +86,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
             "model" : useModel, 
             "cutlen" : cutlen,
         },
-        name=useModel+"_"+str(num_classes)+"_"+str(cutlen)
+        name=useModel+"_"+str(num_classes)+"_"+str(cutlen)+"_e_"+str(minepoch)
     )
     """
     Parameter setting
@@ -129,7 +130,7 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
 
     trainer = pl.Trainer(
         max_epochs=epoch,
-        min_epochs=60,
+        min_epochs=minepoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
@@ -140,8 +141,8 @@ def main(target,inpath,arch, batch, epoch, learningrate,cutlen,cutoff,classes):
         model,
         datamodule=data_module,
     )
-    # model.state_dict().keys()
-    # model.load_from_checkpoint("test/2rud3fao/checkpoints/epoch=31-step=4992.ckpt")
+    #model.state_dict().keys()
+    #model.load_from_checkpoint("metrics debug/ymkiyx2a/checkpoints/epoch=29-step=1350.ckpt")
     trainer.test(
         model,
         datamodule=data_module,

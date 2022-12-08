@@ -1,9 +1,14 @@
 import torch.nn as nn
 import torch
 import math
-from models.metrics import get_full_metrics
-from models.process import MyProcess
+from process import MyProcess
 from einops import repeat,rearrange
+
+"""
+not recommended
+pos_emb : cos&sin
+cls_token : true
+"""
 
 class PositionalEncoding(nn.Module):
     def __init__(self,max_len: int,d_model: int):

@@ -1,11 +1,15 @@
 import torch.nn as nn
 import torch
 import math
-from models.metrics import get_full_metrics
-from models.process import MyProcess
+from process import MyProcess
 from einops import rearrange,repeat
 from torchmetrics.functional.classification import multilabel_accuracy
 
+"""
+not recommended
+pos_emb : sin&cos
+cls_token : false
+"""
 
 def positionalencoding1d(x,dtype = torch.float32):
     """
@@ -97,7 +101,6 @@ class SimpleViT(MyProcess):
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
 
-        self.cls_tolken = nn.Parameter(torch.randn(1,self.convDim))
         self.transformer = Transformer(self.convDim,block_num,head_num,dim_head,mlp_dim)
         self.to_latent = nn.Identity()
         self.linear_head = nn.Sequential(
@@ -107,7 +110,6 @@ class SimpleViT(MyProcess):
 
         self.classes = classes
         # Metrics
-        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 
 

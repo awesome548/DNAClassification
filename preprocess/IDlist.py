@@ -21,7 +21,7 @@ def get_raw_data(infile, fileNM, PNlist, cutoff,cutlen):
 @click.option('--filename', '-f', help='The output file name', type=click.Path())
 @click.option('--outfile', '-o', help='The output result folder path', type=click.Path())
 @click.option('--cutoff', '-c', default=1500, help='Cutoff the first c signals')
-@click.option('--cutlen', '-cut', default=3000, help='Cutoff the first c signals')
+@click.option('--cutlen', '-cut', default=10000, help='Cutoff the first c signals')
 
 def main(target,filename,outfile,cutoff,cutlen):
 	### make output folder
@@ -33,6 +33,7 @@ def main(target,filename,outfile,cutoff,cutlen):
 
 	print("making ID lists")
 	for fileNM in glob.glob(target + '/*.fast5'):
+		#print(fileNM)
 		target_list = get_raw_data(target, fileNM, target_list, cutoff,cutlen)
 
 	num_tar = 0

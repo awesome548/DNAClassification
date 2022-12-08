@@ -1,0 +1,10 @@
+#import pytorch
+click
+wheel
+einops
+glob2
+ont-fast5-api
+scipy
+wandb
+pytorch-lightning
+scikit-learn

@@ -1,58 +1,7 @@
 import torch.nn as nn
 import torch
-from models.process import MyProcess
-from models.metrics import get_full_metrics
+from process import MyProcess 
 import numpy as np
-
-### CREATE MODEL ###
-class LstmEncoder(MyProcess):
-    def __init__(self,inputDim,outputDim,hiddenDim,lr,classes,bidirect):
-        super(LstmEncoder,self).__init__()
-
-        self.lr = lr
-        self.loss_fn = nn.MSELoss()
-
-        #Model Architecture
-        if bidirect:
-            self.lstm = nn.LSTM(input_size = inputDim,
-                            hidden_size = hiddenDim,
-                            batch_first = True,
-                            bidirectional = True,
-                            )
-            self.label = nn.Linear(hiddenDim*2, outputDim)
-        else:
-            self.lstm = nn.LSTM(input_size = inputDim,
-                            hidden_size = hiddenDim,
-                            batch_first = True,
-                            )
-            self.label = nn.Linear(hiddenDim, outputDim)
-        self.train_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="train_",
-        )
-        self.valid_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="valid_",
-        )
-        self.test_metrics = get_full_metrics(
-            num_classes=classes,
-            prefix="test_",
-        )
-        self.save_hyperparameters()
-
-    def forward(self, inputs,hidden0=None):
-        # in lightning, forward defines the prediction/inference actions
-        output, (hidden,cell) = self.lstm(inputs,hidden0)
-        y_hat = self.label(output[:,-1,])
-        y_hat = y_hat.to(torch.float32)
-        return y_hat
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            self.parameters(),
-            lr=self.lr,
-            )
-        return optimizer
 
 class CNNLstmEncoder(MyProcess):
 
@@ -70,6 +19,8 @@ class CNNLstmEncoder(MyProcess):
         ResNet conv
         """
         convDim = 20
+        self.convDim =convDim
+        self.hiddenDim = hiddenDim
         self.conv = nn.Sequential(
             nn.Conv1d(inputDim,convDim,kernel_size=19, padding=5, stride=3),
             nn.BatchNorm1d(20),
@@ -98,10 +49,11 @@ class CNNLstmEncoder(MyProcess):
             'fn' : 0,
             'tn' : 0,
         }
-        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
+        self.point = np.array([])
+        self.cluster = np.array([])
         self.save_hyperparameters()
 
-    def forward(self, inputs,hidden0=None):
+    def forward(self, inputs,hidden0=None,text="train"):
         """
         x [batch_size , convDim , poolLen]
         """
@@ -110,9 +62,14 @@ class CNNLstmEncoder(MyProcess):
         x [batch_size , poolLen , convDim]
         """
         output, (hidden,cell) = self.lstm(torch.transpose(x,1,2),hidden0)
-        y_hat = self.label(output[:,-1,])
+        last_hidden = output[:,-1,]
+        y_hat = self.label(last_hidden)
+        if text == "test":
+            self.cluster.append(last_hidden.cpu().detach().numpy().copy())
+            print("appended")
         y_hat = y_hat.to(torch.float32)
         return y_hat
+
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

@@ -3,9 +3,13 @@ from torch import nn
 import math
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from models.metrics import get_full_metrics
-from models.process import MyProcess
+from process import MyProcess
 import numpy as np
+
+"""
+pos_emb : cos&sin
+cls_token : false
+"""
 
 def posemb_sincos_1d(x,dtype = torch.float32):
     """
@@ -24,20 +28,6 @@ def posemb_sincos_1d(x,dtype = torch.float32):
     pe[:, 1::2] = torch.cos(position.float() * div_term)
 
     return pe.type(dtype)
-
-def posemb_sincos_2d(patches, temperature = 10000, dtype = torch.float32):
-    _, h, w, dim, device, dtype = *patches.shape, patches.device, patches.dtype
-
-    y, x = torch.meshgrid(torch.arange(h, device = device), torch.arange(w, device = device), indexing = 'ij')
-    assert (dim % 4) == 0, 'feature dimension must be multiple of 4 for sincos emb'
-    omega = torch.arange(dim // 4, device = device) / (dim // 4 - 1)
-    omega = 1. / (temperature ** omega)
-
-    y = y.flatten()[:, None] * omega[None, :]
-    x = x.flatten()[:, None] * omega[None, :] 
-    pe = torch.cat((x.sin(), x.cos(), y.sin(), y.cos()), dim = 1)
-    return pe.type(dtype)
-
 # classes
 
 class FeedForward(nn.Module):
@@ -124,7 +114,6 @@ class SimpleViT2(MyProcess):
             'fn' : 0,
             'tn' : 0,
         }       # Metrics
-        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 
     def forward(self, inputs):

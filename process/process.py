@@ -2,6 +2,7 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 import torch
 import numpy as np
+from sklean .cluster import KMeans
 
 
 class MyProcess(pl.LightningModule):
@@ -35,11 +36,12 @@ class MyProcess(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         # It is independent of forward
         x, y = batch
-        y_hat = self.forward(x)
+        y_hat = self.forward(x,text="test")
         y_float =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
         loss = self.loss_fn(y_hat,y_float)
-
         self.log("test_loss",loss)
+
+
         y_hat_idx = y_hat.max(dim=1).indices
         acc = (y == y_hat_idx).float().mean().item()
         y_hat_idx = y_hat_idx.cpu().detach().numpy().copy()

@@ -1,13 +1,14 @@
 import torch
 from torch import nn
 
-from models.metrics import get_full_metrics
-from models.process import MyProcess
+from process import MyProcess
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-# classes
-
+"""
+pos_emb : torch randn
+cls_token : true
+"""
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()

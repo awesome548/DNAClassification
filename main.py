@@ -14,44 +14,45 @@ from dataset.dataformat import Dataformat
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
-@click.option('--batch', '-b', default=128, help='Batch size, default 1000')
-@click.option('--epoch', '-e', default=50, help='Number of epoches, default 20')
-@click.option('--minepoch', '-me', default=50, help='Number of epoches, default 20')
+@click.option('--batch', '-b', default=100, help='Batch size, default 1000')
+@click.option('--minepoch', '-me', default=30, help='Number of epoches, default 20')
 @click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=3, help='Num of class')
+@click.option('--hidden', '-hidden', default=64, help='Num of class')
 
 
-def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,classes):
+def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden):
 
     """
     Change Preference
     """
-    project_name = "CABD epoch sensitivity"
+    project_name = "Baseline-F"
 
     ### MODEL SELECT ###
     useResNet = False
     useTransformer = False
     useLstm = False
     if "ResNet" in str(arch):
-        transform = False 
+        transform = False
         useResNet = True
     elif "LSTM" in str(arch):
         transform = True
-        useLstm = True 
+        useLstm = True
     else:
         assert str(arch) == "Transformer"
         transform = True
-        useTransformer = True 
-    useModel = arch 
+        useTransformer = True
+    useModel = arch
     #####################
 
     """
     Dataset Preference
     """
-    num_classes = classes 
-    dataset_size = 7000
+    num_classes = classes
+    base_classes = 6
+    dataset_size = 12000 
     inputDim = 1
     data_transform = {
         'isFormat' : transform,
@@ -61,14 +62,14 @@ def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,c
     cut_size = {
         'cutoff' : cutoff,
         'cutlen' : cutlen,
-        'maxlen' : 10000,  
+        'maxlen' : 10000,
         'stride' : 5000,
     }
 
     idset = glob.glob(target+'/*.txt')
     dataset = glob.glob(inpath+'/*')
 
-    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=num_classes,transform=data_transform)
+    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=num_classes,base_classes=base_classes,transform=data_transform)
     data_module = data.process(batch)
     dataset_size = data.size()
     ### Torch setting ###
@@ -83,7 +84,7 @@ def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,c
         config={
             "num_clasess": classes,
             "dataset_size" : dataset_size,
-            "model" : useModel, 
+            "model" : useModel,
             "cutlen" : cutlen,
         },
         name=useModel+"_"+str(num_classes)+"_"+str(cutlen)+"_e_"+str(minepoch)
@@ -95,18 +96,18 @@ def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,c
         'padd' : 5,
         'ker' : 19,
         'stride' : 3,
-        'convDim' : 20,
+        'convDim' : 16,
     }
     lstm_params = {
         'inputDim' : inputDim,
-        'hiddenDim' : 128,
+        'hiddenDim' : hidden,
         'outputDim' : num_classes,
         'bidirect' : True
     }
     transformer_params = {
         'classes' : num_classes,
-        'heads' : 4,
-        'depth' : 6,
+        'heads' : 8,
+        'depth' : 4,
     }
 
 
@@ -127,7 +128,7 @@ def main(target,inpath,arch, batch, epoch,minepoch, learningrate,cutlen,cutoff,c
         mode="min",
         patience=10,
     )
-
+    epoch = minepoch + 5
     trainer = pl.Trainer(
         max_epochs=epoch,
         min_epochs=minepoch,

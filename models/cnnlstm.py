@@ -34,13 +34,13 @@ class CNNLstmEncoder(MyProcess):
                             batch_first = True,
                             bidirectional = True,
                             )
-            self.label = nn.Linear(hiddenDim*2, outputDim)
+            self.fc = nn.Linear(hiddenDim*2, outputDim)
         else:
             self.lstm = nn.LSTM(input_size = convDim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             )
-            self.label = nn.Linear(hiddenDim, outputDim)
+            self.fc = nn.Linear(hiddenDim, outputDim)
 
         self.acc = np.array([])
         self.metric = {
@@ -49,8 +49,11 @@ class CNNLstmEncoder(MyProcess):
             'fn' : 0,
             'tn' : 0,
         }
-        self.point = np.array([])
-        self.cluster = np.array([])
+        #self.labels = np.array([]) 
+        self.labels = torch.zeros(1,1)
+        #self.position = np.array([])
+        #self.cluster = np.array([])
+        self.cluster = torch.zeros(1,hiddenDim*2)
         self.save_hyperparameters()
 
     def forward(self, inputs,hidden0=None,text="train"):
@@ -62,12 +65,12 @@ class CNNLstmEncoder(MyProcess):
         x [batch_size , poolLen , convDim]
         """
         output, (hidden,cell) = self.lstm(torch.transpose(x,1,2),hidden0)
-        last_hidden = output[:,-1,]
-        y_hat = self.label(last_hidden)
         if text == "test":
-            self.cluster.append(last_hidden.cpu().detach().numpy().copy())
-            print("appended")
-        y_hat = y_hat.to(torch.float32)
+            last_hidden = output[:,-1,]
+            #cluster = last_hidden.cpu().detach().numpy().copy()
+            #self.cluster = np.append(self.cluster,cluster)
+            self.cluster = torch.vstack((self.cluster,last_hidden.detach()))
+        y_hat = self.fc(output[:,-1,])
         return y_hat
 
 

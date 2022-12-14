@@ -144,6 +144,8 @@ def base_class(idset: list,dataset:list,size:int,cut_size:dict,base:int) -> dict
     train_E, val_E, test_E = torch.split(dataE,data_size)
     train_F, val_F, test_F = torch.split(dataF,data_size)
 
+    assert train_A.shape == train_B.shape == train_C.shape == train_D.shape == train_E.shape == train_F.shape
+
     train = {
         "a" : train_A,
         "b" : train_B,
@@ -191,6 +193,8 @@ class Dataformat:
         self.training_set = MultiDataset(train,num_classes,transform,base_classes)
         self.validation_set = MultiDataset(val,num_classes,transform,base_classes)
         self.test_set = MultiDataset(test,num_classes,transform,base_classes)
+        val_dataset_size = len(self.training_set)+len(self.validation_set)+len(self.test_set)
+        assert val_dataset_size == dataset_size*num_classes
         self.dataset = dataset_size
         pass
 

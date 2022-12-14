@@ -6,6 +6,8 @@ from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 import glob
 from dataset.dataformat import Dataformat
+from preference import model_preference,data_preference,model_parameter
+from process import logger_preference
 
 
 @click.command()
@@ -26,128 +28,52 @@ from dataset.dataformat import Dataformat
 def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden):
 
     """
-    Change Preference
+    Preference
     """
     project_name = "Baseline-F"
-
-    ### MODEL SELECT ###
-    useResNet = False
-    useTransformer = False
-    useLstm = False
-    if "ResNet" in str(arch):
-        transform = False
-        useResNet = True
-    elif "LSTM" in str(arch):
-        transform = True
-        useLstm = True
-    else:
-        assert str(arch) == "Transformer"
-        transform = True
-        useTransformer = True
-    useModel = arch
-    #####################
-
+    ### Model ###
+    cnn_params,lstm_params,transformer_params = model_parameter(classes,hidden)
+    model,transform,useModel = model_preference(arch,lstm_params,transformer_params,classes,cutlen,learningrate)
+    ### Dataset ###
+    base_classes,dataset_size,data_transform,cut_size = data_preference(transform,cutoff,cutlen)
     """
-    Dataset Preference
+    Dataset
     """
-    num_classes = classes
-    base_classes = 6
-    dataset_size = 12000 
-    inputDim = 1
-    data_transform = {
-        'isFormat' : transform,
-        'dim' : inputDim,
-        'length' : cutlen,
-    }
-    cut_size = {
-        'cutoff' : cutoff,
-        'cutlen' : cutlen,
-        'maxlen' : 10000,
-        'stride' : 5000,
-    }
-
     idset = glob.glob(target+'/*.txt')
     dataset = glob.glob(inpath+'/*')
 
-    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=num_classes,base_classes=base_classes,transform=data_transform)
+    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=classes,base_classes=base_classes,transform=data_transform)
     data_module = data.process(batch)
     dataset_size = data.size()
-    ### Torch setting ###
-    if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    ### PREPARATION ###
-    """
-    Logger setting
-    """
-    wandb_logger = WandbLogger(
-        project=project_name,
-        config={
-            "num_clasess": classes,
-            "dataset_size" : dataset_size,
-            "model" : useModel,
-            "cutlen" : cutlen,
-        },
-        name=useModel+"_"+str(num_classes)+"_"+str(cutlen)+"_e_"+str(minepoch)
-    )
-    """
-    Parameter setting
-    """
-    cnn_params = {
-        'padd' : 5,
-        'ker' : 19,
-        'stride' : 3,
-        'convDim' : 16,
-    }
-    lstm_params = {
-        'inputDim' : inputDim,
-        'hiddenDim' : hidden,
-        'outputDim' : num_classes,
-        'bidirect' : True
-    }
-    transformer_params = {
-        'classes' : num_classes,
-        'heads' : 8,
-        'depth' : 4,
-    }
-
 
     """
-    MODEL architecture
+    Training
     """
-    if useLstm:
-        model = CNNLstmEncoder(**lstm_params,lr=learningrate,classes=num_classes)
-    elif useResNet:
-        model = ResNet(Bottleneck,[2,2,2,2],classes=num_classes,cutlen=cutlen,lr=learningrate)
-    elif useTransformer:
-        # model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
-        model = SimpleViT2(**transformer_params,lr=learningrate)
-
     # refine callbacks
     early_stopping = EarlyStopping(
         monitor="valid_loss",
         mode="min",
         patience=10,
     )
+    ### Torch setting ###
+    if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    ### Logger ###
+    wandb_logger = logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch) 
     epoch = minepoch + 5
+    ### Train ###
     trainer = pl.Trainer(
         max_epochs=epoch,
         min_epochs=minepoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
-        callbacks=[early_stopping],
-        # callbacks=[model_checkpoint],
+        #callbacks=[early_stopping],
+        #callbacks=[model_checkpoint],
     )
-    trainer.fit(
-        model,
-        datamodule=data_module,
-    )
-    #model.state_dict().keys()
-    #model.load_from_checkpoint("metrics debug/ymkiyx2a/checkpoints/epoch=29-step=1350.ckpt")
-    trainer.test(
-        model,
-        datamodule=data_module,
-    )
+    #trainer.fit(model,datamodule=data_module)
+    model.state_dict().keys()
+    model.load_from_checkpoint("Baseline-F/2hl41atr/checkpoints/epoch=24-step=2400.ckpt")
+    trainer.test(model,datamodule=data_module)
 
 
 if __name__ == '__main__':

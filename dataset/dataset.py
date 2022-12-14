@@ -55,7 +55,7 @@ def base_labels(a,b,c,d,e,f):
       e_labels = torch.ones(e.shape[0])*4
       #f_labels = torch.ones(f.shape[0])*5
       a_labels = torch.ones(a.shape[0])*5
-      return (torch.cat((a_labels,b_labels,c_labels,d_labels),dim=0).clone().detach()).to(torch.int64)
+      return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels),dim=0).clone().detach()).to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:dict,num_classes:int,transform:dict,base:int):

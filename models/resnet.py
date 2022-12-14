@@ -87,6 +87,7 @@ class ResNet(MyProcess):
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
 
         self.cluster = np.array([])        
+        self.labels = np.array([])
 
         self.save_hyperparameters()
 
@@ -117,7 +118,7 @@ class ResNet(MyProcess):
 
         return nn.Sequential(*layers)
 
-    def _forward_impl(self, x):
+    def forward(self, x,text="train"):
         x = x.unsqueeze(1)
         x = self.conv1(x)
         x = self.bn1(x)
@@ -131,12 +132,13 @@ class ResNet(MyProcess):
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
+        if text == "test":
+            tmp = x
+            cluster = tmp.cpu().detach().numpy().copy()
+            self.cluster = np.append(self.cluster,cluster)
         x = self.fc(x)
 
         return x
-
-    def forward(self, x):
-        return self._forward_impl(x)
     
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

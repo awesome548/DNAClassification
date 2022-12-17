@@ -1,18 +1,14 @@
 import torch
 import click
-from pytorch_lightning.loggers import WandbLogger
 import pytorch_lightning as pl
-from models import CNNLstmEncoder,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-import glob
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
-from process import logger_preference
+from process import logger_preference,Garbage_collector_callback
 
 
 @click.command()
 @click.option('--target', '-t', help='The path of positive sequence training set', type=click.Path(exists=True))
-# Inpath is the taget directory of all dataset
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
@@ -24,25 +20,25 @@ from process import logger_preference
 @click.option('--classes', '-class', default=3, help='Num of class')
 @click.option('--hidden', '-hidden', default=64, help='Num of class')
 
-
 def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden):
 
+    torch.manual_seed(1)
+    torch.cuda.manual_seed(1)
+    torch.cuda.manual_seed_all(1)
+    torch.backends.cudnn.deterministic = True
+    torch.set_deterministic_debug_mode(True)
     """
     Preference
     """
     project_name = "Baseline-F"
     ### Model ###
-    cnn_params,lstm_params,transformer_params = model_parameter(classes,hidden)
-    model,transform,useModel = model_preference(arch,lstm_params,transformer_params,classes,cutlen,learningrate)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate)
     ### Dataset ###
-    base_classes,dataset_size,data_transform,cut_size = data_preference(transform,cutoff,cutlen)
+    base_classes,dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
-    Dataset
+    Dataset preparation
     """
-    idset = glob.glob(target+'/*.txt')
-    dataset = glob.glob(inpath+'/*')
-
-    data = Dataformat(idset,dataset,dataset_size,cut_size,num_classes=classes,base_classes=base_classes,transform=data_transform)
+    data = Dataformat(target,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
     data_module = data.process(batch)
     dataset_size = data.size()
 
@@ -55,26 +51,23 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         mode="min",
         patience=10,
     )
-    ### Torch setting ###
-    if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     ### Logger ###
     wandb_logger = logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch) 
-    epoch = minepoch + 5
     ### Train ###
     trainer = pl.Trainer(
-        max_epochs=epoch,
+        max_epochs=(minepoch+5),
         min_epochs=minepoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
-        #callbacks=[early_stopping],
+        callbacks=[Garbage_collector_callback()],
         #callbacks=[model_checkpoint],
     )
-    #trainer.fit(model,datamodule=data_module)
-    model.state_dict().keys()
-    model.load_from_checkpoint("Baseline-F/2hl41atr/checkpoints/epoch=24-step=2400.ckpt")
+    trainer.fit(model,datamodule=data_module)
     trainer.test(model,datamodule=data_module)
 
+    #model.state_dict().keys()
+    #model.load_from_checkpoint("Baseline-F/2hl41atr/checkpoints/epoch=24-step=2400.ckpt")
 
 if __name__ == '__main__':
     main()

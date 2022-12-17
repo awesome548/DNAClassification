@@ -8,3 +8,4 @@ wandb
 pytorch-lightning
 scikit-learn
 matplotlib
+seaborn

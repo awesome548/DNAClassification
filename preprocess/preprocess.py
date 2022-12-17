@@ -32,7 +32,7 @@ def manipulate(x,cutlen,maxlen,size,stride):
     ### start point is already cutoff point ###
     for index in range(num):
         start = stride*index
-        data[index::num,:] = x[:,start:start+cutlen]
+        data[index::num,:] = x[:size,start:start+cutlen]
     print(data.shape)
     return data
 

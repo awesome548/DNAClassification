@@ -117,7 +117,7 @@ class SimpleViT2(MyProcess):
         self.save_hyperparameters()
 
     def forward(self, inputs):
-
+        x.unsqueeze(1)
         x = self.conv(inputs)
         x = torch.transpose(x,1,2)
         pe = posemb_sincos_1d(x)

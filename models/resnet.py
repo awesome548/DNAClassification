@@ -86,8 +86,8 @@ class ResNet(MyProcess):
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
 
-        self.cluster = np.array([])        
-        self.labels = np.array([])
+        self.labels = torch.zeros(1).cuda()
+        self.cluster = torch.zeros(1,67).cuda()
 
         self.save_hyperparameters()
 
@@ -133,9 +133,7 @@ class ResNet(MyProcess):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         if text == "test":
-            tmp = x
-            cluster = tmp.cpu().detach().numpy().copy()
-            self.cluster = np.append(self.cluster,cluster)
+            self.cluster = torch.vstack((self.cluster,x.clone().detach()))
         x = self.fc(x)
 
         return x

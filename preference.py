@@ -1,13 +1,7 @@
-from models import LSTM,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model
+from models import LSTM,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,CNNLstmEncoder
 def model_parameter(flag,hidden):
     if flag == 0:
         ##LSTM
-        #model_params = {
-            #'padd' : 5,
-            #'ker' : 19,
-            #'stride' : 3,
-            #'convDim' : 16,
-        #}
         model_params = {
             'hiddenDim' : hidden,
             'bidirect' : True,
@@ -54,7 +48,8 @@ def data_preference(cutoff,cutlen):
 def model_preference(arch,hidden,classes,cutlen,learningrate):
     if "LSTM" in str(arch):
         model_params = model_parameter(0,hidden)
-        model = LSTM(**model_params,lr=learningrate,classes=classes)
+        #model = LSTM(**model_params,lr=learningrate,classes=classes)
+        model = CNNLstmEncoder(**model_params,lr=learningrate,classes=classes)
     elif "ResNet" in str(arch):
         model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate)
     elif "Transformer" in str(arch):

@@ -1,4 +1,5 @@
 from models.lstm import LSTM
+from models.lstm_test import CNNLstmEncoder
 from models.resnet import ResNet,Bottleneck
 from models.resnet2 import ResNet2
 from models.simple_vit import SimpleViT

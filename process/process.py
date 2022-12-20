@@ -36,10 +36,10 @@ class MyProcess(pl.LightningModule):
         
 
         ### Kmeans ###
-        self.labels = torch.hstack((self.labels,y.clone().detach().cpu()))
+        self.labels = torch.hstack((self.labels,y.clone().detach()))
 
         ### Metrics ###
-        target = 0
+        target = self.target
         y_hat_idx = y_hat.max(dim=1).indices
         acc = (y == y_hat_idx).float().mean().item()
         y_hat_idx = (y_hat_idx == target)
@@ -54,6 +54,8 @@ class MyProcess(pl.LightningModule):
         return {"test_loss" : loss}
 
     def test_epoch_end(self,outputs):
+        n_class = self.classes
+        target = str(self.target)
 
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
@@ -67,54 +69,36 @@ class MyProcess(pl.LightningModule):
         self.log("test_Recall",recall)
         self.log("test_Precision",precision)
 
-        """
         ### K-Means ###
-        ### tensor
         cluster = self.cluster[1:,].cuda()
-        X = cluster.cpu().detach().numpy().copy()
         labels = self.labels[1:]
+        X = cluster.cpu().detach().numpy().copy()
 
-        assert cluster.shape[1] == 128
-        assert labels.shape[0] == 2000*6
-        ### numpy
-        #X = self.cluster.reshape((-1,self.hiddenDim))
-        #labels = self.labels
-
-        kmeans = KMeans(n_clusters=6,init='k-means++',n_init=1,random_state=0).fit(X)
-
-        #linear = nn.Linear(self.hiddenDim*2,2).cuda()
-        #position = linear(cluster)
-
-        marker = [".","*","+","x","o","^"]
-        color = ['r','b','g','c','m','y']
+        kmeans = KMeans(n_clusters=n_class,init='k-means++',n_init=1,random_state=0).fit(X)
         
-        heat_map = torch.zeros(6,6)
-        #heat_map = np.zeros((6,6))
+        heat_map = torch.zeros(n_class,n_class)
         val_len = 0
-        for i in range(6):
+        for i in range(n_class):
             p = labels[kmeans.labels_ ==i]
             val_len += int(p.shape[0])
-            for j in range(6):
-                #print(p.shape)
+            for j in range(n_class):
                 x = torch.zeros(p.shape)
-                #x = np.zeros(p.shape)
                 x[p==j] = 1
                 heat_map[i,j] = torch.count_nonzero(x)
-                #heat_map[i,j] = np.count_nonzero(x)
         assert val_len == int(labels.shape[0])
         heatmap = (heat_map/20).cpu().detach().numpy().copy()
         #heatmap = (heat_map/20)
         plt.figure()
         s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig("heatmap.png")
+        plt.savefig(f"heatmap-transformer-{target}.png")
         
+        marker = [".","*","+","x","o","^"]
+        color = ['r','b','g','c','m','y']
         #for i in range(self.classes):
             #p = position[kmeans.labels_ ==i,:]
             #plt.scatter(p[:,1],p[:,2],marker = marker[i],color = color[i])
             #plt.savefig("kmeans-2.png")
-        
-        """
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
             self.parameters(),

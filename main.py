@@ -19,20 +19,21 @@ from process import logger_preference,Garbage_collector_callback
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=3, help='Num of class')
 @click.option('--hidden', '-hidden', default=64, help='Num of class')
+@click.option('--target_class', '-t_class', default=0, help='Num of class')
 
-def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden):
+def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class):
 
-    torch.manual_seed(1)
-    torch.cuda.manual_seed(1)
-    torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True
-    torch.set_deterministic_debug_mode(True)
+    #torch.manual_seed(1)
+    #torch.cuda.manual_seed(1)
+    #torch.cuda.manual_seed_all(1)
+    #torch.backends.cudnn.deterministic = True
+    #torch.set_deterministic_debug_mode(True)
     """
     Preference
     """
     project_name = "Baseline-F"
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class)
     ### Dataset ###
     base_classes,dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
@@ -52,7 +53,7 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         patience=10,
     )
     ### Logger ###
-    wandb_logger = logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch) 
+    wandb_logger = logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch,target_class) 
     ### Train ###
     trainer = pl.Trainer(
         max_epochs=(minepoch+5),

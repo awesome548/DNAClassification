@@ -4,11 +4,12 @@ from process import MyProcess
 import numpy as np
 
 class LSTM(MyProcess):
-    def __init__(self,hiddenDim,lr,classes,bidirect):
+    def __init__(self,hiddenDim,lr,classes,bidirect,target):
         super(LSTM,self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
         self.classes = classes
+        self.target = target
         """
         ResNet conv
         """
@@ -47,8 +48,7 @@ class LSTM(MyProcess):
         self.save_hyperparameters()
 
     def forward(self,x,hidden0=None,text=None):
-        x = x.unsqueeze(1)
-        x = self.conv(x)
+        x = self.conv(x.view(-1,1,3000))
         output, (hidden,cell) = self.lstm(torch.transpose(x,1,2),hidden0)
         y_hat = self.fc(output[:,-1,])
         if text == "test":

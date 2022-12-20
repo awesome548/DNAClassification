@@ -15,14 +15,14 @@ def model_parameter(flag,hidden):
     elif flag == 2:
         ##cosformer
         model_params = {
-            'use_cos': False,
-            'kernel': 'elu',
-            #'use_cos': True,
-            #'kernel': 'relu',
+            #'use_cos': False,
+            #'kernel': 'elu',
+            'use_cos': True,
+            'kernel': 'relu',
             'd_model': 36,
             'n_heads': 4,
             'n_layers': 4,
-            'ffn_ratio': 6,
+            'ffn_ratio': 4,
             'rezero': False,
             'ln_eps': 1e-5,
             'denom_eps': 1e-5,
@@ -45,13 +45,13 @@ def data_preference(cutoff,cutlen):
     }
     return base_classes,dataset_size,cut_size
 
-def model_preference(arch,hidden,classes,cutlen,learningrate):
+def model_preference(arch,hidden,classes,cutlen,learningrate,target):
     if "LSTM" in str(arch):
         model_params = model_parameter(0,hidden)
-        #model = LSTM(**model_params,lr=learningrate,classes=classes)
-        model = CNNLstmEncoder(**model_params,lr=learningrate,classes=classes)
+        model = LSTM(**model_params,lr=learningrate,classes=classes,target=target)
+        #model = CNNLstmEncoder(**model_params,lr=learningrate,classes=classes)
     elif "ResNet" in str(arch):
-        model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate)
+        model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate,target=target)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
         #model = ViT2(**transformer_params,length=cutlen,lr=learningrate)

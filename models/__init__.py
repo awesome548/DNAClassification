@@ -1,5 +1,4 @@
 from models.lstm import LSTM
-from models.lstm_test import CNNLstmEncoder
 from models.resnet import ResNet,Bottleneck
 from models.resnet2 import ResNet2
 from models.simple_vit import SimpleViT
@@ -8,3 +7,4 @@ from models.vit_2 import ViT2
 from models.simple_vit2 import SimpleViT2
 from models.kernel_transformer import Kernel_transformer
 from models.cosformer import Transformer_clf_model
+from models.gru import GRU

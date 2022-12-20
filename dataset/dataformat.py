@@ -3,6 +3,7 @@ import torch
 import glob
 from dataset.dataset import MultiDataset
 from dataset.datamodule import DataModule
+from torch.utils.data import DataLoader
 
 def two_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     assert len(dataset) == 2
@@ -125,9 +126,14 @@ class Dataformat:
         self.dataset = dataset_size
         pass
 
-
-    def process(self,batch):
+    def module(self,batch):
         return DataModule(self.training_set,self.validation_set,self.test_set,batch_size=batch)
+
+    def loader(self,batch):
+        params = {'batch_size': batch,
+				'shuffle': True,
+				'num_workers': 24}
+        return DataLoader(self.training_set,**params),DataLoader(self.validation_set,**params),DataLoader(self.test_set,**params)
 
     def size(self) -> int:
         return self.dataset

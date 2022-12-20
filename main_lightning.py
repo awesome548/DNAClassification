@@ -14,7 +14,7 @@ from process import logger_preference,Garbage_collector_callback
 
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--minepoch', '-me', default=30, help='Number of epoches, default 20')
-@click.option('--learningrate', '-l', default=1e-2, help='Learning rate, default 1e-3')
+@click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=3, help='Num of class')
@@ -40,7 +40,7 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     Dataset preparation
     """
     data = Dataformat(target,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
-    data_module = data.process(batch)
+    data_module = data.module(batch)
     dataset_size = data.size()
 
     """

@@ -11,6 +11,7 @@ class Transformer_clf_model(MyProcess):
         self.loss_fn = nn.CrossEntropyLoss()
         self.classes = classes
         self.target = target
+        self.cutlen = cutlen
         
         dim = model_args["d_model"] 
         self.conv = nn.Sequential(

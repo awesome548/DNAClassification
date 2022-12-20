@@ -56,6 +56,7 @@ class MyProcess(pl.LightningModule):
     def test_epoch_end(self,outputs):
         n_class = self.classes
         target = str(self.target)
+        cutlen = str(self.cutlen)
 
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
@@ -91,7 +92,7 @@ class MyProcess(pl.LightningModule):
         plt.figure()
         s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"heatmaps/heatmap-transformer-{target}.png")
+        plt.savefig(f"heatmaps/heatmap-GRU-{target}-{cutlen}.png")
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

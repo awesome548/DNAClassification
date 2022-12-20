@@ -1,31 +1,31 @@
 import torch
 
-def double_data(a:torch.Tensor,b:torch.Tensor,isFormat:bool,dim:int,length:int):
+def double_data(a,b,c,d,e,f):
       return torch.cat((a,b))
 
-def double_labels(a:torch.Tensor,b:torch.Tensor):
-      a_labels = torch.zeros(a.shape[0])
-      b_labels = torch.ones(b.shape[0])
-      return (torch.cat((a_labels,b_labels),dim=0).clone().detach()).to(torch.int64)
+def double_labels(a,b,c,d,e,f):
+      y_a = torch.zeros(a.shape[0])
+      y_b = torch.ones(b.shape[0])
+      return (torch.cat((y_a,y_b),dim=0).clone().detach()).to(torch.int64)
 
-def triple_data(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor,isFormat:bool,dim:int,length:int):
+def triple_data(a,b,c,d,e,f):
       return torch.cat((a,b,c))
 
-def triple_labels(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor):
-      a_labels = torch.zeros(a.shape[0])
-      b_labels = torch.ones(b.shape[0])
-      c_labels = torch.ones(c.shape[0])*2
-      return (torch.cat((a_labels,b_labels,c_labels),dim=0).clone().detach()).to(torch.int64)
+def triple_labels(a,b,c,d,e,f):
+      y_a = torch.zeros(a.shape[0])
+      y_b = torch.ones(b.shape[0])
+      y_c = torch.ones(c.shape[0])*2
+      return (torch.cat((y_a,y_b,y_c),dim=0).clone().detach()).to(torch.int64)
 
-def quad_data(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor,d:torch.Tensor,isFormat:bool,dim:int,length:int):
+def quad_data(a,b,c,d,e,f):
       return torch.cat((a,b,c,d))
 
-def quad_labels(a:torch.Tensor,b:torch.Tensor,c:torch.Tensor,d:torch.Tensor):
-      a_labels = torch.zeros(a.shape[0])
-      b_labels = torch.ones(b.shape[0])
-      c_labels = torch.ones(c.shape[0])*2
-      d_labels = torch.ones(d.shape[0])*3
-      return (torch.cat((a_labels,b_labels,c_labels,d_labels),dim=0).clone().detach()).to(torch.int64)
+def quad_labels(a,b,c,d,e,f):
+      y_a = torch.zeros(a.shape[0])
+      y_b = torch.ones(b.shape[0])
+      y_c = torch.ones(c.shape[0])*2
+      y_d = torch.ones(d.shape[0])*3
+      return (torch.cat((y_a,y_b,y_c,y_d),dim=0).clone().detach()).to(torch.int64)
 
 def base_data(a,b,c,d,e,f):
       return torch.cat((a,b,c,d,e,f))

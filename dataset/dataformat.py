@@ -115,24 +115,13 @@ class Dataformat:
         idset.sort()
         dataset.sort()
 
-        if num_classes == 2:
-            #train, val, test,dataset_size = two_class_opposite(idset,dataset,dataset_size,cut_size)
-            #train, val, test,dataset_size = two_class(idset,dataset,dataset_size,cut_size)
-            train, val, test,dataset_size = two_class_concat(idset,dataset,dataset_size,cut_size)
-        elif num_classes ==3:
-            train, val ,test,dataset_size = three_class(idset,dataset,dataset_size,cut_size)
-        elif num_classes ==4:
-            train, val,test,dataset_size = four_class(idset,dataset,dataset_size,cut_size)
-        elif num_classes == base_classes:
-            print("OK")
-            train, val, test, dataset_size = base_class(idset,dataset,dataset_size,cut_size,base_classes)
-
+        train, val, test, dataset_size = base_class(idset,dataset,dataset_size,cut_size,base_classes)
 
         self.training_set = MultiDataset(train,num_classes,base_classes)
         self.validation_set = MultiDataset(val,num_classes,base_classes)
         self.test_set = MultiDataset(test,num_classes,base_classes)
-        val_dataset_size = len(self.training_set)+len(self.validation_set)+len(self.test_set)
-        assert val_dataset_size == dataset_size*num_classes
+        #val_dataset_size = len(self.training_set)+len(self.validation_set)+len(self.test_set)
+        #assert val_dataset_size == dataset_size*base_classes
         self.dataset = dataset_size
         pass
 

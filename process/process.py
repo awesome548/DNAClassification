@@ -70,7 +70,7 @@ class MyProcess(pl.LightningModule):
         self.log("test_Precision",precision)
 
         ### K-Means ###
-        cluster = self.cluster[1:,].cuda()
+        cluster = self.cluster[1:,]
         labels = self.labels[1:]
         X = cluster.cpu().detach().numpy().copy()
 
@@ -91,14 +91,8 @@ class MyProcess(pl.LightningModule):
         plt.figure()
         s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"heatmap-transformer-{target}.png")
+        plt.savefig(f"heatmaps/heatmap-transformer-{target}.png")
         
-        marker = [".","*","+","x","o","^"]
-        color = ['r','b','g','c','m','y']
-        #for i in range(self.classes):
-            #p = position[kmeans.labels_ ==i,:]
-            #plt.scatter(p[:,1],p[:,2],marker = marker[i],color = color[i])
-            #plt.savefig("kmeans-2.png")
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
             self.parameters(),

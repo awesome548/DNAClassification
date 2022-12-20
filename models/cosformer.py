@@ -2,15 +2,15 @@ from models import Kernel_transformer
 from process import MyProcess
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 
 class Transformer_clf_model(MyProcess):
-    def __init__(self, model_type, model_args,lr,classes,cutlen):
+    def __init__(self, model_type, model_args,lr,classes,cutlen,target):
         super(Transformer_clf_model, self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
         self.classes = classes
+        self.target = target
         
         dim = model_args["d_model"] 
         self.conv = nn.Sequential(
@@ -36,7 +36,8 @@ class Transformer_clf_model(MyProcess):
             'tn' : 0,
         }
         
-        self.labels = torch.zeros(1).cpu()
+        self.labels = torch.zeros(1).cuda()
+        self.cluster = torch.zeros(1,model_args['d_model']).cuda()
         self.save_hyperparameters()
 
     def forward(self, x, attention_mask=None, lengths=None,text=None):
@@ -49,6 +50,8 @@ class Transformer_clf_model(MyProcess):
             attention_mask=attention_mask,
             lengths=lengths)[:, 0, :]
         # x -> [batch_size, d_model]
+        if text == "test":
+            self.cluster = torch.vstack((self.cluster,x.clone().detach()))
 
         x = self.linear(x)
         

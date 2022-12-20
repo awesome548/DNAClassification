@@ -56,7 +56,7 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target):
         model_params = model_parameter(2,hidden)
         #model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
         #model = SimpleViT2(**model_params,lr=learningrate,classes=classes)
-        model = Transformer_clf_model(model_type='kernel', model_args=model_params,lr=learningrate,classes=classes,cutlen=cutlen)
+        model = Transformer_clf_model(model_type='kernel', model_args=model_params,lr=learningrate,classes=classes,cutlen=cutlen,target=target)
     else:
         raise NotImplementedError("model selection error")
     useModel = arch

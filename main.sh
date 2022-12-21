@@ -20,6 +20,6 @@ class=6
 #python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -b 100 -a GRU -me 30 -hidden 64
 #python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -b 200 -a ResNet-me 20 -t_class 2
 #python main.py -t $id_dir -i $src_dir -class 6 -len 5000 -b 200 -a Transformer -me 30 
-for j in 64 128 256 ;do
-    python main_lightning.py -t $id_dir -i $src_dir -class 6 -len 3000 -a GRU -b 200 -me 30 -hidden $j 
+for j in Transformer ResNet LSTM GRU ;do
+    python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -a $j -b 200 -me 30 
 done

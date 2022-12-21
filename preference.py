@@ -4,7 +4,7 @@ def model_parameter(flag,hidden):
         ##LSTM
         model_params = {
             'hiddenDim' : hidden,
-            'bidirect' : False,
+            'bidirect' : True,
         }
     elif flag == 1:
         ##transformer
@@ -45,19 +45,18 @@ def data_preference(cutoff,cutlen):
     }
     return base_classes,dataset_size,cut_size
 
-def model_preference(arch,hidden,classes,cutlen,learningrate,target):
+def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch):
     if "GRU" in str(arch):
         model_params = model_parameter(0,hidden)
-        #model = LSTM(**model_params,lr=learningrate,classes=classes,target=target)
-        model = GRU(**model_params,lr=learningrate,classes=classes,target=target,cutlen=cutlen)
-        #model = CNNLstmEncoder(**model_params,lr=learningrate,classes=classes)
+        model = GRU(**model_params,lr=learningrate,classes=classes,target=target,cutlen=cutlen,epoch=epoch)
     elif "ResNet" in str(arch):
-        model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate,target=target)
+        model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate,target=target,epoch=epoch)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
-        #model = ViT2(**transformer_params,length=cutlen,lr=learningrate)
-        #model = SimpleViT2(**model_params,lr=learningrate,classes=classes)
-        model = Transformer_clf_model(model_type='kernel', model_args=model_params,lr=learningrate,classes=classes,cutlen=cutlen,target=target)
+        model = Transformer_clf_model(model_type='kernel', model_args=model_params,lr=learningrate,classes=classes,cutlen=cutlen,target=target,epoch=epoch)
+    elif "LSTM" in str(arch):
+        model_params = model_parameter(0,hidden)
+        model = LSTM(**model_params,lr=learningrate,classes=classes,target=target,cutlen=cutlen,epoch=epoch)
     else:
         raise NotImplementedError("model selection error")
     useModel = arch

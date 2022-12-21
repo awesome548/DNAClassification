@@ -17,7 +17,7 @@ from process import logger_preference,Garbage_collector_callback
 @click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
-@click.option('--classes', '-class', default=3, help='Num of class')
+@click.option('--classes', '-class', default=6, help='Num of class')
 @click.option('--hidden', '-hidden', default=64, help='Num of class')
 @click.option('--target_class', '-t_class', default=0, help='Num of class')
 
@@ -31,9 +31,9 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Baseline-F"
+    project_name = "Baseline-4"
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch)
     ### Dataset ###
     base_classes,dataset_size,cut_size = data_preference(cutoff,cutlen)
     """

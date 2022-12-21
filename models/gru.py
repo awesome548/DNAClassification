@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 class GRU(MyProcess):
-    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen):
+    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch):
         super(GRU,self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()

@@ -34,7 +34,6 @@ class MyProcess(pl.LightningModule):
         loss = self.loss_fn(y_hat,y_float)
         self.log("test_loss",loss)
         
-
         ### Kmeans ###
         self.labels = torch.hstack((self.labels,y.clone().detach()))
 
@@ -42,6 +41,8 @@ class MyProcess(pl.LightningModule):
         target = self.target
         y_hat_idx = y_hat.max(dim=1).indices
         acc = (y == y_hat_idx).float().mean().item()
+        self.acc = np.append(self.acc,acc)
+
         y_hat_idx = (y_hat_idx == target)
         y = (y == target)
         self.metric['tp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx == y))
@@ -49,35 +50,29 @@ class MyProcess(pl.LightningModule):
         self.metric['tn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx == y))
         self.metric['fn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y))
 
-        self.acc = np.append(self.acc,acc)
-
         return {"test_loss" : loss}
 
     def test_epoch_end(self,outputs):
+        ### Valuables ###
         n_class = self.classes
-        target = str(self.target)
         cutlen = str(self.cutlen)
-
-        ### Merics ###
-        tp,fp,fn,tn = self.metric.values()
-        acc = self.acc.mean()
-        acc_1 = (tp+tn)/(tp+tn+fp+fn)
-        precision = (tp)/(tp+fp)
-        recall = (tp)/(tp+fn)
-
-        self.log("test_Accuracy",acc)
-        self.log("test_Accuracy2",acc_1)
-        self.log("test_Recall",recall)
-        self.log("test_Precision",precision)
-
-        ### K-Means ###
+        epoch = str(self.epoch)
         cluster = self.cluster[1:,]
         labels = self.labels[1:]
         X = cluster.cpu().detach().numpy().copy()
 
+        heat_map = torch.zeros(n_class,n_class)
+
+        ### Merics ###
+        tp,fp,fn,tn = self.metric.values()
+        self.log("test_Accuracy",self.acc.mean())
+        self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
+        self.log("test_Recall",(tp)/(tp+fp))
+        self.log("test_Precision",(tp)/(tp+fp))
+
+        ### K-Means ###
         kmeans = KMeans(n_clusters=n_class,init='k-means++',n_init=1,random_state=0).fit(X)
         
-        heat_map = torch.zeros(n_class,n_class)
         val_len = 0
         for i in range(n_class):
             p = labels[kmeans.labels_ ==i]
@@ -86,13 +81,15 @@ class MyProcess(pl.LightningModule):
                 x = torch.zeros(p.shape)
                 x[p==j] = 1
                 heat_map[i,j] = torch.count_nonzero(x)
+
         assert val_len == int(labels.shape[0])
         heatmap = (heat_map/20).cpu().detach().numpy().copy()
-        #heatmap = (heat_map/20)
+
+        ### SAVE FIG ###
         plt.figure()
         s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"heatmaps/heatmap-GRU-{target}-{cutlen}.png")
+        plt.savefig(f"heatmaps/baseline-4/GRU-{cutlen}-e{epoch}.png")
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

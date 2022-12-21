@@ -1,4 +1,4 @@
-from preprocess import Preprocess,calu_size
+from process import Preprocess,calu_size
 import torch
 import glob
 from dataset.dataset import MultiDataset

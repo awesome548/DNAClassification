@@ -7,6 +7,13 @@
 </p>
 
 ## Models
-- ResNet : SqquigleNet,ResNet-50
-- LSTM : CNN&LSTM(bidirectional)
-- Transformer : ViT,simple-ViT,cosformer
+- *ResNet* : [SquiggleNet](https://github.com/welch-lab/SquiggleNet)
+- *RNN* : CNN&LSTM
+- *RNN* : CNN&GRU
+- *Transformer* : [ViT,simple-ViT](https://github.com/lucidrains/vit-pytorch#simple-vit)
+- *Transformer* : [Cosformer](https://github.com/davidsvy/cosformer-pytorch)
+
+## Parameters 
+- `dataset_size` : num of one class dataset size
+- `cutoff&cutlen` : start(cutoff)->(cutlen)-> end
+- `target` : target class num

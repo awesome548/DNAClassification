@@ -31,11 +31,12 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Baseline-4"
+    project_name = "Category-4"
+    base_classes = 4
     ### Model ###
     model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch)
     ### Dataset ###
-    base_classes,dataset_size,cut_size = data_preference(cutoff,cutlen)
+    dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
     Dataset preparation
     """

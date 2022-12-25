@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
+from dateutil.parser import ParserError
 
 class MyProcess(pl.LightningModule):
     def training_step(self, batch, batch_idx):
@@ -30,15 +31,14 @@ class MyProcess(pl.LightningModule):
         y_hat = self.forward(x,text="test")
 
         ### Loss ###
-        y_float =  F.one_hot(y,num_classes=self.classes).to(torch.float32)
-        loss = self.loss_fn(y_hat,y_float)
+        loss = self.loss_fn(y_hat,y)
         self.log("test_loss",loss)
         
         ### Kmeans ###
         self.labels = torch.hstack((self.labels,y.clone().detach()))
 
         ### Metrics ###
-        target = self.target
+        target = self.pref["target"]
         y_hat_idx = y_hat.max(dim=1).indices
         acc = (y == y_hat_idx).float().mean().item()
         self.acc = np.append(self.acc,acc)
@@ -54,9 +54,8 @@ class MyProcess(pl.LightningModule):
 
     def test_epoch_end(self,outputs):
         ### Valuables ###
-        n_class = self.classes
-        cutlen = str(self.cutlen)
-        epoch = str(self.epoch)
+        n_class,target,cutlen,epoch,name = self.pref.values()
+
         cluster = self.cluster[1:,]
         labels = self.labels[1:]
         X = cluster.cpu().detach().numpy().copy()
@@ -83,13 +82,16 @@ class MyProcess(pl.LightningModule):
                 heat_map[i,j] = torch.count_nonzero(x)
 
         assert val_len == int(labels.shape[0])
-        heatmap = (heat_map/20).cpu().detach().numpy().copy()
+        for i in range(n_class):
+            heat_map[:,i] = heat_map[:,i]/heat_map.sum(0)[i]
+        heatmap = heat_map.cpu().detach().numpy().copy()
+
 
         ### SAVE FIG ###
         plt.figure()
         s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"heatmaps/baseline-4/GRU-{cutlen}-e{epoch}.png")
+        plt.savefig(f"heatmaps/Category-4/{name}-{str(cutlen)}-e{epoch}.png")
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

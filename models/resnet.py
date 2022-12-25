@@ -57,15 +57,18 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(MyProcess):
-    def __init__(self, block, layers, cutlen,classes,lr,target,epoch):
+    def __init__(self, block, layers, cutlen,classes,lr,target,epoch,name):
         super(ResNet, self).__init__()
         self.lr = lr
         self.classes = classes
         self.loss_fn = nn.CrossEntropyLoss()
-        self.cutlen = cutlen
-        self.target = target
-        self.epoch = epoch
-
+        self.pref = {
+            "classes" : classes,
+            "target" : target,
+            "cutlen" : cutlen,
+            "epoch" : epoch,
+            "name" : name,
+        }
 		# first block
         self.chan1 = 20
         self.conv1 = nn.Conv1d(1, 20, 19, padding=5, stride=3)

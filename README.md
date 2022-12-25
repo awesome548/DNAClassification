@@ -13,7 +13,11 @@
 - *Transformer* : [ViT,simple-ViT](https://github.com/lucidrains/vit-pytorch#simple-vit)
 - *Transformer* : [Cosformer](https://github.com/davidsvy/cosformer-pytorch)
 
-## Parameters 
+## General Parameters 
 - `dataset_size` : num of one class dataset size
 - `cutoff&cutlen` : start(cutoff)->(cutlen)-> end
 - `target` : target class num
+
+## Requirements
+`pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116`
+`pip3 install -r packages.txt`

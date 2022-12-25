@@ -4,13 +4,17 @@ import torch
 import numpy as np
 
 class GRU(MyProcess):
-    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch):
+    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name):
         super(GRU,self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
-        self.classes = classes
-        self.target = target
-        self.cutlen = cutlen
+        self.pref = {
+            "classes" : classes,
+            "target" : target,
+            "cutlen" : cutlen,
+            "epoch" : epoch,
+            "name" : name,
+        }
         
         dim = 20
         self.conv = nn.Sequential(
@@ -26,14 +30,15 @@ class GRU(MyProcess):
                             batch_first = True,
                             bidirectional = True,
                             )
-            self.fc = nn.Linear(hiddenDim*2, classes)
+            hiddenDim = hiddenDim*2
         else:
             self.rnn = nn.GRU(input_size = dim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = False,
                             )
-            self.fc = nn.Linear(hiddenDim, classes)
+
+        self.fc = nn.Linear(hiddenDim, classes)
 
         self.acc = np.array([])
         self.metric = {

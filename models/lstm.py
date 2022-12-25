@@ -4,14 +4,17 @@ from process import MyProcess
 import numpy as np
 
 class LSTM(MyProcess):
-    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch):
+    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name):
         super(LSTM,self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
-        self.classes = classes
-        self.target = target
-        self.cutlen = cutlen
-        self.epoch = epoch
+        self.pref = {
+            "classes" : classes,
+            "target" : target,
+            "cutlen" : cutlen,
+            "epoch" : epoch,
+            "name" : name,
+        }
 
         dim = 20
         self.conv = nn.Sequential(
@@ -27,15 +30,14 @@ class LSTM(MyProcess):
                             batch_first = True,
                             bidirectional = True,
                             )
-            self.fc = nn.Linear(hiddenDim*2, classes)
-            self.hiddenDim = hiddenDim*2
+            hiddenDim = hiddenDim*2
         else:
             self.rnn = nn.LSTM(input_size = dim,
                             hidden_size = hiddenDim,
                             batch_first = True,
                             bidirectional = False,
                             )
-            self.fc = nn.Linear(hiddenDim, classes)
+        self.fc = nn.Linear(hiddenDim, classes)
 
         self.acc = np.array([])
         self.metric = {

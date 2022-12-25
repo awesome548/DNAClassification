@@ -17,9 +17,11 @@ class=6
     #python main.py -t $id_dir -i $src_dir -class 6 -len $i -a Transformer -b 200 -me 40
 #done
 
-#python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -b 100 -a GRU -me 30 -hidden 64
+#python main.py -t $id_dir -i $src_dir -class 4 -len 3000 -b 100 -a LSTM -me 30 -hidden 64
 #python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -b 200 -a ResNet-me 20 -t_class 2
 #python main.py -t $id_dir -i $src_dir -class 6 -len 5000 -b 200 -a Transformer -me 30 
 for j in Transformer ResNet LSTM GRU ;do
-    python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -a $j -b 200 -me 30 
+    for i in 3000 4000 5000;do
+        python main.py -t $id_dir -i $src_dir -class 4 -len $i -a $j -b 200 -me 40 
+    done
 done

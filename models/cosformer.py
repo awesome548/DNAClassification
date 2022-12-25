@@ -5,14 +5,17 @@ import torch.nn as nn
 import numpy as np
 
 class Transformer_clf_model(MyProcess):
-    def __init__(self, model_type, model_args,lr,classes,cutlen,target,epoch):
+    def __init__(self, model_type, model_args,lr,classes,cutlen,target,epoch,name):
         super(Transformer_clf_model, self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
-        self.classes = classes
-        self.target = target
-        self.cutlen = cutlen
-        self.epoch = epoch
+        self.pref = {
+            "classes" : classes,
+            "target" : target,
+            "cutlen" : cutlen,
+            "epoch" : epoch,
+            "name" : name,
+        }
         
         dim = model_args["d_model"] 
         self.conv = nn.Sequential(

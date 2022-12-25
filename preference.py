@@ -34,7 +34,6 @@ def model_parameter(flag,hidden):
     return model_params
 
 def data_preference(cutoff,cutlen):
-    base_classes = 6
     dataset_size = 10000 
     
     cut_size = {
@@ -43,20 +42,29 @@ def data_preference(cutoff,cutlen):
         'maxlen' : 10000,
         'stride' : 5000,
     }
-    return base_classes,dataset_size,cut_size
+    return dataset_size,cut_size
 
 def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch):
+
+    preference = {
+        "lr" : learningrate,
+        "cutlen" : cutlen,
+        "classes" : classes,
+        "epoch" : epoch,
+        "target" : target,
+        "name" : arch
+    }
     if "GRU" in str(arch):
         model_params = model_parameter(0,hidden)
-        model = GRU(**model_params,lr=learningrate,classes=classes,target=target,cutlen=cutlen,epoch=epoch)
+        model = GRU(**model_params,**preference)
     elif "ResNet" in str(arch):
-        model = ResNet(Bottleneck,[2,2,2,2],classes=classes,cutlen=cutlen,lr=learningrate,target=target,epoch=epoch)
+        model = ResNet(Bottleneck,[2,2,2,2],**preference)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
-        model = Transformer_clf_model(model_type='kernel', model_args=model_params,lr=learningrate,classes=classes,cutlen=cutlen,target=target,epoch=epoch)
+        model = Transformer_clf_model(model_type='kernel', model_args=model_params,**preference)
     elif "LSTM" in str(arch):
         model_params = model_parameter(0,hidden)
-        model = LSTM(**model_params,lr=learningrate,classes=classes,target=target,cutlen=cutlen,epoch=epoch)
+        model = LSTM(**model_params,**preference)
     else:
         raise NotImplementedError("model selection error")
     useModel = arch

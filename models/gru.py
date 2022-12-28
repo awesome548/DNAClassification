@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 class GRU(MyProcess):
-    def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name):
+    def __init__(self,cnn_params,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name,heatmap):
         super(GRU,self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
@@ -14,14 +14,15 @@ class GRU(MyProcess):
             "cutlen" : cutlen,
             "epoch" : epoch,
             "name" : name,
+            "heatmap" : heatmap,
         }
-        
-        dim = 20
+        dim,kernel,stride = cnn_params.values()
+
         self.conv = nn.Sequential(
-            nn.Conv1d(1,dim,kernel_size=19, padding=5, stride=3),
+            nn.Conv1d(1,dim,kernel_size=kernel, padding=3, stride=stride),
             nn.BatchNorm1d(dim),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
+            #nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         #Model Architecture
         if bidirect:

@@ -14,7 +14,7 @@ from process import logger_preference,Garbage_collector_callback
 
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--minepoch', '-me', default=30, help='Number of epoches, default 20')
-@click.option('--learningrate', '-l', default=1e-3, help='Learning rate, default 1e-3')
+@click.option('--learningrate', '-l', default=2e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=6, help='Num of class')
@@ -31,10 +31,11 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Category-4"
-    base_classes = 4
+    project_name = "Category-2-3"
+    base_classes = 2
+    heatmap = False
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap)
     ### Dataset ###
     dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
@@ -66,8 +67,9 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)
-    trainer.test(model,datamodule=data_module)
+    output = trainer.test(model,datamodule=data_module)
 
+    print(type(output))
     #model.state_dict().keys()
     #model.load_from_checkpoint("Baseline-F/2hl41atr/checkpoints/epoch=24-step=2400.ckpt")
 

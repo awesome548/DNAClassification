@@ -15,12 +15,12 @@ def model_parameter(flag,hidden):
     elif flag == 2:
         ##cosformer
         model_params = {
-            'use_cos': False,
-            'kernel': 'elu',
-            #'use_cos': True,
-            #'kernel': 'relu',
+            #'use_cos': False,
+            #'kernel': 'elu',
+            'use_cos': True,
+            'kernel': 'relu',
             'd_model': 36,
-            'n_heads': 4,
+            'n_heads': 6,
             'n_layers': 4,
             'ffn_ratio': 4,
             'rezero': False,
@@ -44,7 +44,12 @@ def data_preference(cutoff,cutlen):
     }
     return dataset_size,cut_size
 
-def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch):
+def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap):
+    cnn_params = {
+        "out_dim" : 20,
+        "kernel" : 19,
+        "stride" : 3,
+    }
 
     preference = {
         "lr" : learningrate,
@@ -52,11 +57,12 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch):
         "classes" : classes,
         "epoch" : epoch,
         "target" : target,
-        "name" : arch
+        "name" : arch,
+        "heatmap" : heatmap,
     }
     if "GRU" in str(arch):
         model_params = model_parameter(0,hidden)
-        model = GRU(**model_params,**preference)
+        model = GRU(cnn_params,**model_params,**preference)
     elif "ResNet" in str(arch):
         model = ResNet(Bottleneck,[2,2,2,2],**preference)
     elif "Transformer" in str(arch):

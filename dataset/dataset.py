@@ -1,12 +1,12 @@
 import torch
 
 def double_data(a,b,c,d,e,f):
-      return torch.cat((a,b))
+      return torch.cat((b,c))
 
 def double_labels(a,b,c,d,e,f):
-      y_a = torch.zeros(a.shape[0])
-      y_b = torch.ones(b.shape[0])
-      return (torch.cat((y_a,y_b),dim=0).clone().detach()).to(torch.int64)
+      y_b = torch.zeros(b.shape[0])
+      y_c = torch.ones(c.shape[0])
+      return (torch.cat((y_b,y_c),dim=0).clone().detach()).to(torch.int64)
 
 def triple_data(a,b,c,d,e,f):
       return torch.cat((a,b,c))
@@ -56,12 +56,12 @@ class MultiDataset(torch.utils.data.Dataset):
             elif num_classes == 3:
                   self.data = triple_data(*data)
                   self.label = triple_labels(*data)
-            elif (num_classes == 4 and base == 6):
-                  self.data = base_data(*data)
-                  self.label = base_labels(*data,1)
             elif (num_classes == 4 and base == 4):
                   self.data = quad_data(*data)
                   self.label = quad_labels(*data)
+            elif num_classes == 4:
+                  self.data = base_data(*data)
+                  self.label = base_labels(*data,1)
             elif num_classes == 6:
                   self.data = base_data(*data)
                   self.label = base_labels(*data,0)

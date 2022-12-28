@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 
 class Transformer_clf_model(MyProcess):
-    def __init__(self, model_type, model_args,lr,classes,cutlen,target,epoch,name):
+    def __init__(self, model_type, model_args,lr,classes,cutlen,target,epoch,name,heatmap):
         super(Transformer_clf_model, self).__init__()
         self.lr = lr
         self.loss_fn = nn.CrossEntropyLoss()
@@ -15,6 +15,7 @@ class Transformer_clf_model(MyProcess):
             "cutlen" : cutlen,
             "epoch" : epoch,
             "name" : name,
+            "heatmap" : heatmap,
         }
         
         dim = model_args["d_model"] 
@@ -25,6 +26,7 @@ class Transformer_clf_model(MyProcess):
             nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         max_len = ((cutlen+5*2-19)//3 + 1)//2 + 2
+        #max_len = (cutlen+5*2-19)//3 + 2
         self.cls_token = nn.Parameter(torch.rand(1,dim))
         if model_type == 'kernel':
             self.encoder = Kernel_transformer(**model_args,max_len=max_len)

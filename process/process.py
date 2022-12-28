@@ -54,13 +54,7 @@ class MyProcess(pl.LightningModule):
 
     def test_epoch_end(self,outputs):
         ### Valuables ###
-        n_class,target,cutlen,epoch,name = self.pref.values()
-
-        cluster = self.cluster[1:,]
-        labels = self.labels[1:]
-        X = cluster.cpu().detach().numpy().copy()
-
-        heat_map = torch.zeros(n_class,n_class)
+        n_class,target,cutlen,epoch,name,heatmap = self.pref.values()
 
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
@@ -70,28 +64,35 @@ class MyProcess(pl.LightningModule):
         self.log("test_Precision",(tp)/(tp+fp))
 
         ### K-Means ###
-        kmeans = KMeans(n_clusters=n_class,init='k-means++',n_init=1,random_state=0).fit(X)
+        if heatmap:
+            cluster = self.cluster[1:,]
+            labels = self.labels[1:]
+            X = cluster.cpu().detach().numpy().copy()
+            heat_map = torch.zeros(n_class,n_class)
+
+            kmeans = KMeans(n_clusters=n_class,init='k-means++',n_init=1,random_state=0).fit(X)
         
-        val_len = 0
-        for i in range(n_class):
-            p = labels[kmeans.labels_ ==i]
-            val_len += int(p.shape[0])
-            for j in range(n_class):
-                x = torch.zeros(p.shape)
-                x[p==j] = 1
-                heat_map[i,j] = torch.count_nonzero(x)
+            val_len = 0
+            for i in range(n_class):
+                p = labels[kmeans.labels_ ==i]
+                val_len += int(p.shape[0])
+                for j in range(n_class):
+                    x = torch.zeros(p.shape)
+                    x[p==j] = 1
+                    heat_map[i,j] = torch.count_nonzero(x)
 
-        assert val_len == int(labels.shape[0])
-        for i in range(n_class):
-            heat_map[:,i] = heat_map[:,i]/heat_map.sum(0)[i]
-        heatmap = heat_map.cpu().detach().numpy().copy()
+            assert val_len == int(labels.shape[0])
+            for i in range(n_class):
+                heat_map[:,i] = heat_map[:,i]/heat_map.sum(0)[i]
+            heatmap = heat_map.cpu().detach().numpy().copy()
 
+            ### SAVE FIG ###
+            plt.figure()
+            s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
+            s.set(xlabel="label",ylabel="cluster")
+            plt.savefig(f"heatmaps/category-2-3/{name}-{str(cutlen)}-e{epoch}.png")
 
-        ### SAVE FIG ###
-        plt.figure()
-        s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
-        s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"heatmaps/Category-4/{name}-{str(cutlen)}-e{epoch}.png")
+        return outputs
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

@@ -57,7 +57,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(MyProcess):
-    def __init__(self, block, layers, cutlen,classes,lr,target,epoch,name):
+    def __init__(self, block, layers, cutlen,classes,lr,target,epoch,name,heatmap):
         super(ResNet, self).__init__()
         self.lr = lr
         self.classes = classes
@@ -68,7 +68,9 @@ class ResNet(MyProcess):
             "cutlen" : cutlen,
             "epoch" : epoch,
             "name" : name,
+            "heatmap" : heatmap,
         }
+
 		# first block
         self.chan1 = 20
         self.conv1 = nn.Conv1d(1, 20, 19, padding=5, stride=3)

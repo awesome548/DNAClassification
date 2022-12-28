@@ -144,7 +144,6 @@ class ViT(MyProcess):
         
         self.fc = nn.Linear(self.convDim,self.classes)
         # Metrics
-        self.metrics = get_full_metrics(classes=classes,prefix="Test_")
         self.save_hyperparameters()
 
 

@@ -33,7 +33,7 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     project_name = "Category-2-3"
     base_classes = 2
-    heatmap = False
+    heatmap = True
     ### Model ###
     model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap)
     ### Dataset ###
@@ -58,12 +58,11 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     wandb_logger = logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch,target_class) 
     ### Train ###
     trainer = pl.Trainer(
-        max_epochs=(minepoch+5),
-        min_epochs=minepoch,
+        max_epochs=minepoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
-        callbacks=[Garbage_collector_callback()],
+        #callbacks=[Garbage_collector_callback()],
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)

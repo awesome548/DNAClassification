@@ -19,10 +19,10 @@ def model_parameter(flag,hidden):
             #'kernel': 'elu',
             'use_cos': True,
             'kernel': 'relu',
-            'd_model': 36,
-            'n_heads': 6,
-            'n_layers': 4,
-            'ffn_ratio': 4,
+            'd_model': 112,
+            'n_heads': 8,
+            'n_layers': 3,
+            'ffn_ratio': 8,
             'rezero': False,
             'ln_eps': 1e-5,
             'denom_eps': 1e-5,
@@ -46,10 +46,12 @@ def data_preference(cutoff,cutlen):
 
 def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap):
     cnn_params = {
-        "out_dim" : 20,
-        "kernel" : 19,
-        "stride" : 3,
+        "out_dim" : 96,
+        "kernel" : 14,
+        "stride" : 2,
     }
+    #{'out_dim': 91, 'kernel': 14, 'stride': 2}
+    #out_dim': 112.0, 'kernel': 17, 'stride': 5, 'n_layers': 3, 'ffn_ratio': 8
 
     preference = {
         "lr" : learningrate,
@@ -62,12 +64,12 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
     }
     if "GRU" in str(arch):
         model_params = model_parameter(0,hidden)
-        model = GRU(cnn_params,**model_params,**preference)
+        model = GRU(cnn_params,preference,**model_params)
     elif "ResNet" in str(arch):
-        model = ResNet(Bottleneck,[2,2,2,2],**preference)
+        model = ResNet(Bottleneck,[2,2,2,2],preference)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
-        model = Transformer_clf_model(model_type='kernel', model_args=model_params,**preference)
+        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
     elif "LSTM" in str(arch):
         model_params = model_parameter(0,hidden)
         model = LSTM(**model_params,**preference)

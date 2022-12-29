@@ -5,28 +5,23 @@ import torch.nn as nn
 import numpy as np
 
 class Transformer_clf_model(MyProcess):
-    def __init__(self, model_type, model_args,lr,classes,cutlen,target,epoch,name,heatmap):
+    def __init__(self, cnn_params,model_type, model_args,preference):
         super(Transformer_clf_model, self).__init__()
-        self.lr = lr
+        self.lr = preference["lr"]
+        classes = preference["classes"]
+        cutlen = preference["cutlen"]
         self.loss_fn = nn.CrossEntropyLoss()
-        self.pref = {
-            "classes" : classes,
-            "target" : target,
-            "cutlen" : cutlen,
-            "epoch" : epoch,
-            "name" : name,
-            "heatmap" : heatmap,
-        }
+        self.pref = preference
+        dim,kernel,stride = cnn_params.values()
         
-        dim = model_args["d_model"] 
         self.conv = nn.Sequential(
-            nn.Conv1d(1,dim,kernel_size=19, padding=5, stride=3),
+            nn.Conv1d(1,dim,kernel_size=kernel, padding=3, stride=stride),
             nn.BatchNorm1d(dim),
             nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
+            #nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
-        max_len = ((cutlen+5*2-19)//3 + 1)//2 + 2
-        #max_len = (cutlen+5*2-19)//3 + 2
+        max_len =  -(-(cutlen-kernel)//stride) + 2
+        
         self.cls_token = nn.Parameter(torch.rand(1,dim))
         if model_type == 'kernel':
             self.encoder = Kernel_transformer(**model_args,max_len=max_len)

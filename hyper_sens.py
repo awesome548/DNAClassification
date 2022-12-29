@@ -32,7 +32,7 @@ def test(model, device, test_loader):
 ### varible ###
 target = "/z/kiku/Dataset/ID"
 inpath ="/z/kiku/Dataset/Target"
-arch = "GRU"
+arch = "Transformer"
 batch = 100
 minepoch = 40
 learningrate = 2e-3
@@ -62,19 +62,39 @@ train_generator,val_generator,test_generator = data.loader(batch)
 dataset_size = data.size()
 
 def objective(trial):
-    out_dim = trial.suggest_int('out_dim',20,128)
+    out_dim = int(trial.suggest_discrete_uniform('out_dim',16,128,16))
     kernel = trial.suggest_int('kernel',3,20)
     stride = trial.suggest_int('stride',2,5)
+    layers = trial.suggest_int('n_layers',3,8)
+    ratio = trial.suggest_int('ffn_ratio',3,8)
+    #model_params = {
+        #'hiddenDim' : hidden,
+        #'bidirect' : True,
+    #}
     model_params = {
-        'hiddenDim' : hidden,
-        'bidirect' : True,
+        #'use_cos': False,
+        #'kernel': 'elu',
+        'use_cos': True,
+        'kernel': 'relu',
+        'd_model': out_dim,
+        'n_heads': 8,
+        'n_layers': layers,
+        'ffn_ratio': ratio,
+        'rezero': False,
+        'ln_eps': 1e-5,
+        'denom_eps': 1e-5,
+        'bias': False,
+        'dropout': 0.2,    
+        'xavier': True,
     }
     cnn_params = {
         "out_dim" : out_dim,
         "kernel" : kernel,
         "stride" : stride,
     }
-    model = GRU(cnn_params,**model_params,**preference)
+    #model = GRU(cnn_params,**model_params,**preference)
+    model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
+
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     loss_fn = nn.CrossEntropyLoss().to(device)

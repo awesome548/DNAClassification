@@ -54,14 +54,13 @@ class MyProcess(pl.LightningModule):
 
     def test_epoch_end(self,outputs):
         ### Valuables ###
-        n_class,target,cutlen,epoch,name,heatmap = self.pref.values()
-
+        _,cutlen,n_class,epoch,_,name,heatmap = self.pref.values()
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
         self.log("test_Accuracy",self.acc.mean())
         self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
         self.log("test_Recall",(tp)/(tp+fp))
-        self.log("test_Precision",(tp)/(tp+fp))
+        self.log("test_Precision",(tp)/(tp+fn))
 
         ### K-Means ###
         if heatmap:

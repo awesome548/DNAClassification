@@ -4,24 +4,19 @@ import torch
 import numpy as np
 
 class GRU(MyProcess):
-    def __init__(self,cnn_params,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name,heatmap):
+    def __init__(self,cnn_params,preference,hiddenDim,bidirect):
         super(GRU,self).__init__()
-        self.lr = lr
+        self.lr = preference["lr"]
+        classes = preference["classes"]
+        self.classes = classes
         self.loss_fn = nn.CrossEntropyLoss()
-        self.pref = {
-            "classes" : classes,
-            "target" : target,
-            "cutlen" : cutlen,
-            "epoch" : epoch,
-            "name" : name,
-            "heatmap" : heatmap,
-        }
+        self.pref = preference
         dim,kernel,stride = cnn_params.values()
 
         self.conv = nn.Sequential(
             nn.Conv1d(1,dim,kernel_size=kernel, padding=3, stride=stride),
             nn.BatchNorm1d(dim),
-            nn.ReLU(),
+            nn.GELU(),
             #nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         #Model Architecture

@@ -57,19 +57,12 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(MyProcess):
-    def __init__(self, block, layers, cutlen,classes,lr,target,epoch,name,heatmap):
+    def __init__(self, block, layers, preference):
         super(ResNet, self).__init__()
-        self.lr = lr
-        self.classes = classes
+        self.lr = preference["lr"]
+        classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
-        self.pref = {
-            "classes" : classes,
-            "target" : target,
-            "cutlen" : cutlen,
-            "epoch" : epoch,
-            "name" : name,
-            "heatmap" : heatmap,
-        }
+        self.pref = preference
 
 		# first block
         self.chan1 = 20
@@ -91,6 +84,7 @@ class ResNet(MyProcess):
         self.layer2 = self._make_layer(block, 30, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 45, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 67, layers[3], stride=2)
+        #self.layer5 = self._make_layer(block, 67, layers[4], stride=2)
 
         self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,67).cuda()
@@ -135,6 +129,7 @@ class ResNet(MyProcess):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        #x = self.layer5(x)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)

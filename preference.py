@@ -1,4 +1,4 @@
-from models import LSTM,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
+from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s
 def model_parameter(flag,hidden):
     if flag == 0:
         ##LSTM
@@ -40,7 +40,7 @@ def data_preference(cutoff,cutlen):
         'cutoff' : cutoff,
         'cutlen' : cutlen,
         'maxlen' : 10000,
-        'stride' : 5000,
+        'stride' : 5000 if cutlen<=5000 else (10000-cutlen),
     }
     return dataset_size,cut_size
 
@@ -66,13 +66,15 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
         model_params = model_parameter(0,hidden)
         model = GRU(cnn_params,preference,**model_params)
     elif "ResNet" in str(arch):
-        model = ResNet(Bottleneck,[2,2,2,2],preference)
+        model = resnet(preference)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
         model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
     elif "LSTM" in str(arch):
         model_params = model_parameter(0,hidden)
         model = LSTM(**model_params,**preference)
+    elif "Effnet" in str(arch):
+        model = effnetv2_s(preference)
     else:
         raise NotImplementedError("model selection error")
     useModel = arch

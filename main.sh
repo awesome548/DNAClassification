@@ -17,10 +17,10 @@ src_dir="/z/kiku/Dataset/Target"
 #done
 
 #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -b 200 -a GRU -me 40 -hidden 64 -t_class 1
-#python main.py -t $id_dir -i $src_dir -class 6 -len 3000 -b 200 -a ResNet-me 20 -t_class 2
+python main.py -t $id_dir -i $src_dir -class 4 -len 7000 -b 100 -a ResNet -me 20 -t_class 0 
 #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -b 200 -a Transformer -me 40
-for j in 50 70 90 ;do
-    for i in 64 128 256;do
-        python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -a GRU -b 200 -me $j -hidden $i 
-    done
-done
+#for j in 50 70 90 ;do
+    #for i in 64 128 256;do
+        #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -a GRU -b 200 -me $j -hidden $i 
+    #done
+#done

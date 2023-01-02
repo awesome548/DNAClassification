@@ -9,6 +9,8 @@ import optuna
 from models import LSTM,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
 
 optuna.logging.disable_default_handler()
+
+### TRAIN and TEST ###
 def train(model, device, train_loader, criterion,optimizer):
   model.train()
   for batch_idx, (data, target) in enumerate(train_loader):
@@ -29,6 +31,7 @@ def test(model, device, test_loader):
             y_hat_idx = output.max(dim=1).indices
             correct += (target == y_hat_idx).sum().item()
     return 1 - correct / len(test_loader.dataset)
+
 ### varible ###
 target = "/z/kiku/Dataset/ID"
 inpath ="/z/kiku/Dataset/Target"
@@ -93,7 +96,7 @@ def objective(trial):
         "stride" : stride,
     }
     #model = GRU(cnn_params,**model_params,**preference)
-    model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
+    #model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
 
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

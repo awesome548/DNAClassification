@@ -31,9 +31,9 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Category-2-3"
-    base_classes = 2
-    heatmap = True
+    project_name = "Baseline-4"
+    base_classes = 6
+    heatmap = False
     ### Model ###
     model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap)
     ### Dataset ###

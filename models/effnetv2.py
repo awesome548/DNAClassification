@@ -56,9 +56,11 @@ class SELayer(nn.Module):
 
 def conv_3x3_bn(inp, oup, stride):
     return nn.Sequential(
-        nn.Conv1d(inp, oup, 3, stride, 1, bias=False),
+        nn.Conv1d(inp, oup, 19, stride, 0, bias=False),
+        #nn.Conv1d(inp, oup, 3, stride, 1, bias=False),
         nn.BatchNorm1d(oup),
-        SiLU()
+        SiLU(),
+        nn.MaxPool1d(2, padding=1, stride=2),
     )
 
 

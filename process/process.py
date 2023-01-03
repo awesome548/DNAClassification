@@ -54,13 +54,13 @@ class MyProcess(pl.LightningModule):
 
     def test_epoch_end(self,outputs):
         ### Valuables ###
-        _,cutlen,n_class,epoch,_,name,heatmap = self.pref.values()
+        _,cutlen,n_class,epoch,_,name,heatmap,project = self.pref.values()
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
         self.log("test_Accuracy",self.acc.mean())
         self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
-        self.log("test_Recall",(tp)/(tp+fp))
-        self.log("test_Precision",(tp)/(tp+fn))
+        self.log("test_Recall",(tp)/(tp+fn))
+        self.log("test_Precision",(tp)/(tp+fp))
 
         ### K-Means ###
         if heatmap:
@@ -89,7 +89,7 @@ class MyProcess(pl.LightningModule):
             plt.figure()
             s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
             s.set(xlabel="label",ylabel="cluster")
-            plt.savefig(f"heatmaps/category-2-3/{name}-{str(cutlen)}-e{epoch}.png")
+            plt.savefig(f"heatmaps/{project}/{name}-{str(cutlen)}-e{epoch}.png")
 
         return outputs
         

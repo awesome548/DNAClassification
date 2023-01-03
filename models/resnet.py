@@ -66,20 +66,18 @@ class ResNet(MyProcess):
         self.cfgs = cfgs
 
 		# first block
-        input_channel = cfgs[0][0]
-        self.chan1 = input_channel
-        self.conv1 = nn.Conv1d(1, input_channel, 19, padding=5, stride=3)
+        output_channel = cfgs[-1][0]
+        self.chan1 = cfgs[0][0]
+        self.conv1 = nn.Conv1d(1, self.chan1, 19, padding=5, stride=3)
         self.bn1 = bcnorm(self.chan1)
         self.relu = nn.ReLU(inplace=True)
         self.pool = nn.MaxPool1d(2, padding=1, stride=2)
         
-        layers = []
         block = Bottleneck
-        for c, n ,s in self.cfgs:
-            for i in range(n):
-                layers = self._make_layer(block,layers,c,n,stride=s)
-                output_channel = c
-        self.features = nn.Sequential(*layers)
+        self.layer1 = self._make_layer(block, cfgs[0][0], cfgs[0][1])
+        self.layer2 = self._make_layer(block, cfgs[1][0], cfgs[1][1], stride=2)
+        self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
+        self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
@@ -104,7 +102,7 @@ class ResNet(MyProcess):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def _make_layer(self, block,layers, channels, blocks, stride=1):
+    def _make_layer(self, block, channels, blocks, stride=1):
         downsample = None
 
         if stride != 1 or self.chan1 != channels:
@@ -113,6 +111,7 @@ class ResNet(MyProcess):
             bcnorm(channels),
         )
 
+        layers = []
         layers.append(block(self.chan1, channels, stride, downsample))
 
         if stride != 1 or self.chan1 != channels:
@@ -120,7 +119,7 @@ class ResNet(MyProcess):
         for _ in range(1, blocks):
             layers.append(block(self.chan1, channels))
 
-        return layers
+        return nn.Sequential(*layers)
 
     def forward(self, x,text="train"):
         x = x.unsqueeze(1)
@@ -129,7 +128,10 @@ class ResNet(MyProcess):
         x = self.relu(x)
         x = self.pool(x)
 
-        x = self.features(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -140,17 +142,15 @@ class ResNet(MyProcess):
         return x
 
 
-def resnet(preference):
+def resnet(preference,cfgs=[[20,2],[30,2],[45,2],[67,2]]):
     """
     c : channels
     n : num of layers
-    s : stride of conv
     """
-    cfgs = [
-        # c, n, s
-        [20,2,1],
-        [30,2,2],
-        [45,2,2],
-        [67,2,2],
-    ]
+    #cfgs = [
+        #[20,1],
+        #[118,2],
+        #[40,3],
+        #[98,1],
+    #]
     return ResNet(cfgs, preference)

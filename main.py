@@ -3,12 +3,11 @@ import click
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from dataset.dataformat import Dataformat
-from preference import model_preference,data_preference,model_parameter
-from process import logger_preference,Garbage_collector_callback
+from preference import model_preference,data_preference,model_parameter,logger_preference
 
 
 @click.command()
-@click.option('--target', '-t', help='The path of positive sequence training set', type=click.Path(exists=True))
+@click.option('--idpath', '-id', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
@@ -21,7 +20,7 @@ from process import logger_preference,Garbage_collector_callback
 @click.option('--hidden', '-hidden', default=64, help='Num of class')
 @click.option('--target_class', '-t_class', default=0, help='Num of class')
 
-def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class):
+def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class):
 
     #torch.manual_seed(1)
     #torch.cuda.manual_seed(1)
@@ -31,17 +30,17 @@ def main(target,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Baseline-4"
-    base_classes = 6
-    heatmap = False
+    project_name = "Category-2-3"
+    base_classes = 2
+    heatmap = True
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name)
     ### Dataset ###
     dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
     Dataset preparation
     """
-    data = Dataformat(target,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
+    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
     data_module = data.module(batch)
     dataset_size = data.size()
 

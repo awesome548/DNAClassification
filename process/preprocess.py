@@ -33,7 +33,17 @@ def manipulate(x,cutlen,maxlen,size,stride):
     for index in range(num):
         start = stride*index
         data[index::num,:] = x[:size,start:start+cutlen]
+    """
     print(data.shape)
+    print(torch.max(data))
+    print(torch.min(data))
+    data = data.cpu().detach().numpy().copy()
+    data = stats.zscore(data,axis=1,ddof=1)
+    print(np.max(data))
+    print(np.min(data))
+    data = torch.from_numpy(data.astype(np.int32)).clone()
+    """
+
     return data
 
 def calu_size(cutoff,cutlen,maxlen,size,stride):

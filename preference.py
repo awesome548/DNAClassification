@@ -1,4 +1,6 @@
 from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s
+from pytorch_lightning.loggers import WandbLogger
+
 def model_parameter(flag,hidden):
     if flag == 0:
         ##LSTM
@@ -44,7 +46,7 @@ def data_preference(cutoff,cutlen):
     }
     return dataset_size,cut_size
 
-def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap):
+def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,cfgs):
     cnn_params = {
         "out_dim" : 96,
         "kernel" : 14,
@@ -61,12 +63,13 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
         "target" : target,
         "name" : arch,
         "heatmap" : heatmap,
+        "project" : project,
     }
     if "GRU" in str(arch):
         model_params = model_parameter(0,hidden)
         model = GRU(cnn_params,preference,**model_params)
     elif "ResNet" in str(arch):
-        model = resnet(preference)
+        model = resnet(preference,cfgs)
     elif "Transformer" in str(arch):
         model_params = model_parameter(2,hidden)
         model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
@@ -79,3 +82,16 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
         raise NotImplementedError("model selection error")
     useModel = arch
     return model,useModel
+
+def logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch,target):
+    return WandbLogger(
+        project=project_name,
+        config={
+            "dataset_size" : dataset_size,
+            "model" : useModel,
+            "cutlen" : cutlen,
+            "target" : target,
+            "epoch" : minepoch
+        },
+        name=useModel+"_"+str(classes)+"_"+str(cutlen)+"_e_"+str(minepoch)+"_"+str(target)
+    )

@@ -1,19 +1,18 @@
 import torch
 import torch.nn  as nn
-import click
-import pytorch_lightning as pl
+import time
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
 from process import logger_preference
 import optuna
-from models import LSTM,ResNet,Bottleneck,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
+from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
 
 optuna.logging.disable_default_handler()
 
 ### TRAIN and TEST ###
 def train(model, device, train_loader, criterion,optimizer):
   model.train()
-  for batch_idx, (data, target) in enumerate(train_loader):
+  for data, target in train_loader:
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
@@ -24,56 +23,69 @@ def train(model, device, train_loader, criterion,optimizer):
 def test(model, device, test_loader):
     model.eval()
     correct = 0
+    tp = 0
+    fn = 0
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
             y_hat_idx = output.max(dim=1).indices
-            correct += (target == y_hat_idx).sum().item()
-    return 1 - correct / len(test_loader.dataset)
+            y_hat_idx = (y_hat_idx == target_class)
+            y = (target == target_class)
+            tp += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx == y))
+            fn += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y))
+    return tp/(tp+fn)
 
 ### varible ###
-target = "/z/kiku/Dataset/ID"
+idpath = "/z/kiku/Dataset/ID"
 inpath ="/z/kiku/Dataset/Target"
 arch = "Transformer"
-batch = 100
-minepoch = 40
+batch = 200
+minepoch = 20
 learningrate = 2e-3
-cutlen = 5000
 cutoff = 1500
-classes = 2
-hidden = 64
+classes = 4
 target_class = 1
 heatmap = False
-preference = {
-    "lr" : learningrate,
-    "cutlen" : cutlen,
-    "classes" : classes,
-    "epoch" : minepoch,
-    "target" : target,
-    "name" : arch,
-    "heatmap" : heatmap,
-}
 
-project_name = "Category-23-optim"
-base_classes = 2
+project_name = "Baseline4-resnet-optim"
+base_classes = 6
 heatmap = False
-### Dataset ###
-dataset_size,cut_size = data_preference(cutoff,cutlen)
-data = Dataformat(target,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
-train_generator,val_generator,test_generator = data.loader(batch)
-dataset_size = data.size()
 
 def objective(trial):
-    out_dim = int(trial.suggest_discrete_uniform('out_dim',16,128,16))
+    cutlen = int(trial.suggest_int('cutlen',2000,9000,step=1000))
+    preference = {
+        "lr" : learningrate,
+        "cutlen" : cutlen,
+        "classes" : classes,
+        "epoch" : minepoch,
+        "target" : target_class,
+        "name" : arch,
+        "heatmap" : heatmap,
+    }
+
+
+    dataset_size,cut_size = data_preference(cutoff,cutlen)
+    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
+    train_generator,val_generator,test_generator = data.loader(batch)
+    dataset_size = data.size()
+    cfgs = []
+
+    for i in range(4):
+        out_dim = trial.suggest_int(f'out_dim_{i}',16,128)
+        num_layer = trial.suggest_int(f'num_layer_{i}',1,5)
+        cfgs.append([out_dim,num_layer])
+
+    """
+    ## cnn
     kernel = trial.suggest_int('kernel',3,20)
     stride = trial.suggest_int('stride',2,5)
     layers = trial.suggest_int('n_layers',3,8)
     ratio = trial.suggest_int('ffn_ratio',3,8)
-    #model_params = {
-        #'hiddenDim' : hidden,
-        #'bidirect' : True,
-    #}
+    model_params = {
+        'hiddenDim' : hidden,
+        'bidirect' : True,
+    }
     model_params = {
         #'use_cos': False,
         #'kernel': 'elu',
@@ -95,8 +107,11 @@ def objective(trial):
         "kernel" : kernel,
         "stride" : stride,
     }
+    """
     #model = GRU(cnn_params,**model_params,**preference)
     #model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
+    print(cfgs)
+    model = resnet(preference,cfgs)
 
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -112,9 +127,12 @@ def objective(trial):
         train(model,device,train_generator,loss_fn,optimizer)
         epoch_number+=1
 
-    error_rate = test(model,device,test_generator)
-    return error_rate
+    recall = test(model,device,test_generator)
+    return recall
 
-study = optuna.create_study()
-study.optimize(objective,n_trials=50)
+time_sta = time.time()
+study = optuna.create_study(direction='maximize')
+study.optimize(objective,n_trials=100)
+time_end = time.time()
 print(study.best_params)
+print(time_end-time_sta)

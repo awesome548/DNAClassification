@@ -57,6 +57,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(MyProcess):
+#class ResNet(nn.Module):
     def __init__(self, cfgs, preference):
         super(ResNet, self).__init__()
         self.lr = preference["lr"]
@@ -81,7 +82,6 @@ class ResNet(MyProcess):
         
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
-
         self.acc = np.array([]) 
         self.metric = {
             'tp' : 0,
@@ -93,6 +93,9 @@ class ResNet(MyProcess):
         self.cluster = torch.zeros(1,output_channel).cuda()
 
         self.save_hyperparameters()
+
+        """
+        """
 
 		# initialization
         for m in self.modules():
@@ -142,7 +145,7 @@ class ResNet(MyProcess):
         return x
 
 
-def resnet(preference,cfgs=[[20,2],[30,2],[45,2],[67,2]]):
+def resnet(preference,cfgs):
     """
     c : channels
     n : num of layers

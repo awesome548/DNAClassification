@@ -57,10 +57,14 @@ class MyProcess(pl.LightningModule):
         _,cutlen,n_class,epoch,_,name,heatmap,project = self.pref.values()
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
+        recall = (tp)/(tp+fn)
+        precision = (tp)/(tp+fp)
+        f1 = 2*(precision * recall)/(precision + recall)
         self.log("test_Accuracy",self.acc.mean())
         self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
-        self.log("test_Recall",(tp)/(tp+fn))
-        self.log("test_Precision",(tp)/(tp+fp))
+        self.log("test_Recall",recall)
+        self.log("test_Precision",precision)
+        self.log("test_F1",f1)
 
         ### K-Means ###
         if heatmap:

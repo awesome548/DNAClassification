@@ -54,9 +54,9 @@ class SELayer(nn.Module):
         return x * y
 
 
-def conv_3x3_bn(inp, oup, stride):
+def conv_3x3_bn(inp, oup, kernel,stride,padd):
     return nn.Sequential(
-        nn.Conv1d(inp, oup, 19, stride, 0, bias=False),
+        nn.Conv1d(inp, oup, kernel, stride, padd, bias=False),
         #nn.Conv1d(inp, oup, 3, stride, 1, bias=False),
         nn.BatchNorm1d(oup),
         SiLU(),
@@ -120,12 +120,16 @@ class EffNetV2(MyProcess):
         classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
+        conv_param = cfgs.pop(-1)
+        assert len(cfgs) == 6
         self.cfgs = cfgs
+        self.conv = conv_param
 
         # building first layer
-        input_channel = _make_divisible(24 * width_mult, 8)
+        #input_channel = _make_divisible(24 * width_mult, 8)
+        input_channel = conv_param[0]
         #layers = [conv_3x3_bn(3, input_channel, 2)]
-        layers = [conv_3x3_bn(1,input_channel, 2)]
+        layers = [conv_3x3_bn(1,*conv_param)]
 
         # building inverted residual blocks
         block = MBConv
@@ -180,8 +184,17 @@ class EffNetV2(MyProcess):
                 m.weight.data.normal_(0, 0.001)
                 m.bias.data.zero_()
 
+CFGS =[
+    # t, c, n, s, SE
+    [1,  24,  2, 1, 0],
+    [4,  48,  4, 2, 0],
+    [4,  64,  4, 2, 0],
+    [4, 128,  4, 2, 1],
+    [6, 160,  4, 1, 1],
+    [6, 256,  4, 2, 1],
+]
 
-def effnetv2_s(preference,**kwargs):
+def effnetv2_s(preference,cfgs=CFGS,**kwargs):
     """
     Constructs a EfficientNetV2-S model
     t : expand ratio
@@ -189,19 +202,4 @@ def effnetv2_s(preference,**kwargs):
     n : num of layers
     s : stride of conv
     """
-    cfgs = [
-        # t, c, n, s, SE
-        [1,  24,  2, 1, 0],
-        [4,  48,  4, 2, 0],
-        [4,  64,  4, 2, 0],
-        [4, 128,  4, 2, 1],
-        [6, 160,  4, 1, 1],
-        [6, 256,  4, 2, 1],
-        #[1,  24,  2, 1, 0],
-        #[4,  48,  4, 2, 0],
-        #[4,  64,  4, 2, 0],
-        #[4, 128,  6, 2, 1],
-        #[6, 160,  9, 1, 1],
-        #[6, 256, 15, 2, 1],
-    ]
     return EffNetV2(cfgs, preference, **kwargs)

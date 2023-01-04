@@ -9,14 +9,11 @@ import wandb
 hyperparameter_defaults = dict(
     cutlen=3000,
     learningrate=2e-3,
-    conv_1=20,
-    conv_2=30,
-    conv_3=45,
-    conv_4=67,
-    layer_1=2,
-    layer_2=2,
-    layer_3=2,
-    layer_4=2,
+    channel=24,
+    kernel=19,
+    stride=1,
+    padd=0,
+    cfgs="big"
 )
 
 wandb.init(config=hyperparameter_defaults)
@@ -27,34 +24,47 @@ def main(config):
     EPOCH = 30
     idpath = "/z/kiku/Dataset/ID"
     inpath ="/z/kiku/Dataset/Target"
-    arch = "ResNet"
-    batch = 256
+    arch = "Effnet"
+    batch = 64
     cutoff = 1500
-    classes = 4
+    classes = 2
     target = 1
+    hidden = None
+    project_name = "Category-23-optim"
+    base_classes = 2
     heatmap = False
-    hidden = 64
-    project_name = "Baseline_resnet_sweep"
-    base_classes = 4
-    heatmap = True
 
     LEARNINGRATE = config.learningrate
     CUTLEN = config.cutlen
-    conv_1 = config.conv_1
-    conv_2 = config.conv_2
-    conv_3 = config.conv_3
-    conv_4 = config.conv_4
-    layer_1 = config.layer_1
-    layer_2 = config.layer_2
-    layer_3 = config.layer_3
-    layer_4 = config.layer_4
+    CHAN = config.channel
+    KERNEL = config.kernel
+    STRIDE = config.stride
+    PADD = config.padd
+    cfgs = config.cfgs
 
-    cfgs = [
-        [conv_1,layer_1],
-        [conv_2,layer_2],
-        [conv_3,layer_3],
-        [conv_4,layer_4],
-    ]
+    if cfgs =="big":
+        cfgs = [
+            # t, c, n, s, SE
+            [1,  24,  2, 1, 0],
+            [4,  48,  4, 2, 0],
+            [4,  64,  4, 2, 0],
+            [4, 128,  6, 2, 1],
+            [6, 160,  6, 1, 1],
+            [6, 256,  6, 2, 1],
+            [CHAN,KERNEL,STRIDE,PADD],
+        ]
+    else:
+        cfgs = [
+            # t, c, n, s, SE
+            [1,  24,  2, 1, 0],
+            [4,  48,  4, 2, 0],
+            [4,  64,  4, 2, 0],
+            [4, 128,  4, 2, 1],
+            [6, 160,  4, 1, 1],
+            [6, 256,  4, 2, 1],
+            [CHAN,KERNEL,STRIDE,PADD],
+        ]
+
 
     ### Model ###
     model,useModel = model_preference(arch,hidden,classes,CUTLEN,LEARNINGRATE,target,EPOCH,heatmap,project_name,cfgs)

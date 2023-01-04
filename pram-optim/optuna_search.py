@@ -3,11 +3,10 @@ import torch.nn  as nn
 import time
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
-from process import logger_preference
-import optuna
+import optuna_search
 from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
 
-optuna.logging.disable_default_handler()
+optuna_search.logging.disable_default_handler()
 
 ### TRAIN and TEST ###
 def train(model, device, train_loader, criterion,optimizer):
@@ -131,7 +130,7 @@ def objective(trial):
     return recall
 
 time_sta = time.time()
-study = optuna.create_study(direction='maximize')
+study = optuna_search.create_study(direction='maximize')
 study.optimize(objective,n_trials=100)
 time_end = time.time()
 print(study.best_params)

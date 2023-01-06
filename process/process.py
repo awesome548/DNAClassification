@@ -35,7 +35,8 @@ class MyProcess(pl.LightningModule):
         self.log("test_loss",loss)
         
         ### Kmeans ###
-        self.labels = torch.hstack((self.labels,y.clone().detach()))
+        if self.pref["heatmap"]:
+            self.labels = torch.hstack((self.labels,y.clone().detach()))
 
         ### Metrics ###
         target = self.pref["target"]
@@ -57,14 +58,11 @@ class MyProcess(pl.LightningModule):
         _,cutlen,n_class,epoch,_,name,heatmap,project = self.pref.values()
         ### Merics ###
         tp,fp,fn,tn = self.metric.values()
-        recall = (tp)/(tp+fn)
-        precision = (tp)/(tp+fp)
-        f1 = 2*(precision * recall)/(precision + recall)
         self.log("test_Accuracy",self.acc.mean())
         self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
-        self.log("test_Recall",recall)
-        self.log("test_Precision",precision)
-        self.log("test_F1",f1)
+        self.log("test_Recall",(tp)/(tp+fn))
+        self.log("test_Precision",(tp)/(tp+fp))
+        self.log("test_F1",2*( (tp)/(tp+fp) * (tp)/(tp+fn) ) / ( (tp)/(tp+fp) + (tp)/(tp+fn) ))
 
         ### K-Means ###
         if heatmap:
@@ -91,11 +89,10 @@ class MyProcess(pl.LightningModule):
 
             ### SAVE FIG ###
             plt.figure()
-            s = sns.heatmap(heatmap,annot=True,cmap="Reds",fmt=".3g")
+            s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g")
             s.set(xlabel="label",ylabel="cluster")
             plt.savefig(f"heatmaps/{project}/{name}-{str(cutlen)}-e{epoch}.png")
 
-        return outputs
         
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(

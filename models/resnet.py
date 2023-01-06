@@ -144,16 +144,16 @@ class ResNet(MyProcess):
 
         return x
 
+CFGS =[
+    [20,2],
+    [30,2],
+    [45,2],
+    [67,2]
+]
 
-def resnet(preference,cfgs):
+def resnet(preference,cfgs=CFGS):
     """
     c : channels
     n : num of layers
     """
-    #cfgs = [
-        #[20,1],
-        #[118,2],
-        #[40,3],
-        #[98,1],
-    #]
     return ResNet(cfgs, preference)

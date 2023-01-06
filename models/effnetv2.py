@@ -54,11 +54,11 @@ class SELayer(nn.Module):
         return x * y
 
 
-def conv_3x3_bn(inp, oup, kernel,stride,padd):
+def conv_3x3_bn(inp, channel, kernel,stride,padd):
     return nn.Sequential(
-        nn.Conv1d(inp, oup, kernel, stride, padd, bias=False),
+        nn.Conv1d(inp, channel, kernel, stride, padd, bias=False),
         #nn.Conv1d(inp, oup, 3, stride, 1, bias=False),
-        nn.BatchNorm1d(oup),
+        nn.BatchNorm1d(channel),
         SiLU(),
         nn.MaxPool1d(2, padding=1, stride=2),
     )
@@ -114,22 +114,21 @@ class MBConv(nn.Module):
 
 
 class EffNetV2(MyProcess):
-    def __init__(self, cfgs,preference, width_mult=1.):
+    def __init__(self, cfgs,convpram,preference, width_mult=1.):
         super(EffNetV2, self).__init__()
         self.lr = preference["lr"]
         classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
-        conv_param = cfgs.pop(-1)
         assert len(cfgs) == 6
         self.cfgs = cfgs
-        self.conv = conv_param
+        self.convparam = convpram
 
         # building first layer
         #input_channel = _make_divisible(24 * width_mult, 8)
-        input_channel = conv_param[0]
+        input_channel = convpram["channel"]
         #layers = [conv_3x3_bn(3, input_channel, 2)]
-        layers = [conv_3x3_bn(1,*conv_param)]
+        layers = [conv_3x3_bn(1,**convpram)]
 
         # building inverted residual blocks
         block = MBConv
@@ -193,8 +192,22 @@ CFGS =[
     [6, 160,  4, 1, 1],
     [6, 256,  4, 2, 1],
 ]
+CFGS2 =[
+    # t, c, n, s, SE
+    [1,  24,  2, 1, 0],
+    [4,  48,  4, 2, 0],
+    [4,  64,  4, 2, 0],
+    [4, 128,  6, 2, 1],
+    [6, 160,  6, 1, 1],
+    [6, 256,  6, 2, 1],
+]
 
-def effnetv2_s(preference,cfgs=CFGS,**kwargs):
+
+def effnetv2_s(mode,preference,convparam,cfgs=None,**kwargs):
+    if not mode:
+        cfgs = CFGS
+    else:
+        cfgs = CFGS2
     """
     Constructs a EfficientNetV2-S model
     t : expand ratio
@@ -202,4 +215,4 @@ def effnetv2_s(preference,cfgs=CFGS,**kwargs):
     n : num of layers
     s : stride of conv
     """
-    return EffNetV2(cfgs, preference, **kwargs)
+    return EffNetV2(cfgs, convparam,preference, **kwargs)

@@ -6,11 +6,10 @@ import numpy as np
 from scipy import stats
 import random
 
-def normalization(data_test,filepath,maxlen):
+def mad_normalization(data_test,filepath,maxlen):
     mad = stats.median_abs_deviation(data_test, axis=1, scale='normal')
     m = np.median(data_test, axis=1)   
     data_test = ((data_test - np.expand_dims(m,axis=1))*1.0) / (1.4826 * np.expand_dims(mad,axis=1))
-
     x = np.where(np.abs(data_test) > 3.5)
     for i in range(x[0].shape[0]):
         if x[1][i] == 0:
@@ -19,10 +18,25 @@ def normalization(data_test,filepath,maxlen):
             data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]-1]
         else:
             data_test[x[0][i],x[1][i]] = (data_test[x[0][i],x[1][i]-1] + data_test[x[0][i],x[1][i]+1])/2
-    
     data_test = torch.from_numpy(data_test.astype(np.float32)).clone()
     torch.save(data_test,filepath)
-    
+    return data_test
+
+def normalization(data_test,filepath,maxlen):
+    stats.zscore(data_test, axis=1, ddof=1)
+    x = np.where(np.abs(data_test) > 3.5)
+    for i in range(x[0].shape[0]):
+        if x[1][i] == 0:
+            data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]+1]
+        elif x[1][i] == (maxlen-1):
+            data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]-1]
+        else:
+            data_test[x[0][i],x[1][i]] = (data_test[x[0][i],x[1][i]-1] + data_test[x[0][i],x[1][i]+1])/2
+    data_test = torch.from_numpy(data_test.astype(np.float32)).clone()
+    torch.save(data_test,filepath)
+    print(torch.mean(data_test))
+    print(torch.std(data_test,unbiased=True))
+
     return data_test
     
 
@@ -34,7 +48,6 @@ def manipulate(x,cutlen,maxlen,size,stride):
         start = stride*index
         data[index::num,:] = x[:size,start:start+cutlen]
     """
-    print(data.shape)
     print(torch.max(data))
     print(torch.min(data))
     data = data.cpu().detach().numpy().copy()
@@ -43,7 +56,7 @@ def manipulate(x,cutlen,maxlen,size,stride):
     print(np.min(data))
     data = torch.from_numpy(data.astype(np.int32)).clone()
     """
-
+    print(data.shape)
     return data
 
 def calu_size(cutoff,cutlen,maxlen,size,stride):
@@ -84,7 +97,7 @@ class Preprocess():
                         if len(raw_data) >= (cutoff + maxlen) and read.read_id in self.li:
                             arrpos.append(raw_data[cutoff:(cutoff + maxlen)])
                             count += 1
-            x = normalization(arrpos,filepath,maxlen) 
+            x = normalization(np.array(arrpos),filepath,maxlen) 
         
         return manipulate(x,cutlen,maxlen,size,stride)
     

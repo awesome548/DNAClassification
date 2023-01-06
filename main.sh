@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 #batch size
+#id_dir="/z/kiku/Dataset/ID"
 id_dir="/z/kiku/Dataset/ID"
 src_dir="/z/kiku/Dataset/Target"
 
@@ -16,8 +17,9 @@ src_dir="/z/kiku/Dataset/Target"
     #python main.py -t $id_dir -i $src_dir -class 6 -len $i -a Transformer -b 200 -me 40
 #done
 
+#python test.py -id $id_dir -i $src_dir
 #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -b 200 -a GRU -me 40 -hidden 64 -t_class 1
-python main.py -id $id_dir -i $src_dir -class 2 -len 7000 -b 100 -a Effnet -me 20 -t_class 0 
+python main.py -id $id_dir -i $src_dir -class 2 -len 7000 -b 100 -a Effnet -me 20 -t_class 1 -lr 0.000514
 #python main.py -id $id_dir -i $src_dir -class 4 -len 6000 -b 100 -a ResNet -me 20 -t_class 1 
 #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -b 200 -a Transformer -me 40
 #for j in 50 70 90 ;do

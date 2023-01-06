@@ -46,16 +46,20 @@ def data_preference(cutoff,cutlen):
     }
     return dataset_size,cut_size
 
-def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,cfgs):
+def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,cfgs,mode):
     cnn_params = {
-        "out_dim" : 96,
-        "kernel" : 14,
+        "channel" : 112,
+        "kernel" : 23,
         "stride" : 2,
+        "padd" : 3,
     }
-    #{'out_dim': 91, 'kernel': 14, 'stride': 2}
-    #out_dim': 112.0, 'kernel': 17, 'stride': 5, 'n_layers': 3, 'ffn_ratio': 8
-
-    preference = {
+    """
+    optim logs
+    EFFNET : 112, 23, 2, 3
+    GRU : 'out_dim': 91, 'kernel': 14, 'stride': 2
+    TRANS : out_dim': 112.0, 'kernel': 17, 'stride': 5, 'n_layers': 3, 'ffn_ratio': 8
+    """
+    pref = {
         "lr" : learningrate,
         "cutlen" : cutlen,
         "classes" : classes,
@@ -66,18 +70,18 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
         "project" : project,
     }
     if "GRU" in str(arch):
-        model_params = model_parameter(0,hidden)
-        model = GRU(cnn_params,preference,**model_params)
+        params = model_parameter(0,hidden)
+        model = GRU(cnn_params,pref,**params)
     elif "ResNet" in str(arch):
-        model = resnet(preference=preference,cfgs=cfgs)
+        model = resnet(preference=pref,cfgs=cfgs)
     elif "Transformer" in str(arch):
-        model_params = model_parameter(2,hidden)
-        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=model_params,**preference)
+        params = model_parameter(2,hidden)
+        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=params,**pref)
     elif "LSTM" in str(arch):
-        model_params = model_parameter(0,hidden)
-        model = LSTM(**model_params,**preference)
+        params = model_parameter(0,hidden)
+        model = LSTM(**params,**pref)
     elif "Effnet" in str(arch):
-        model = effnetv2_s(preference,cfgs=cfgs)
+        model = effnetv2_s(mode=mode,preference=pref,convparam=cnn_params,cfgs=cfgs)
     else:
         raise NotImplementedError("model selection error")
     useModel = arch

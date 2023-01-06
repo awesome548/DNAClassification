@@ -13,7 +13,7 @@ from preference import model_preference,data_preference,model_parameter,logger_p
 
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--minepoch', '-me', default=30, help='Number of epoches, default 20')
-@click.option('--learningrate', '-l', default=2e-3, help='Learning rate, default 1e-3')
+@click.option('--learningrate', '-lr', default=2e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
 @click.option('--classes', '-class', default=6, help='Num of class')
@@ -31,16 +31,25 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     Preference
     """
     project_name = "Category-2-3"
-    base_classes = 2
     heatmap = True
+    mode = 1 # normal 0 big 1
+    cfgs =[
+        # t, c, n, s, SE
+        [1,  24,  2, 1, 0],
+        [4,  48,  4, 2, 0],
+        [4,  64,  4, 2, 0],
+        [4, 128,  6, 2, 1],
+        [6, 160,  6, 1, 1],
+        [6, 256,  6, 2, 1],
+    ]
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,cfgs,mode)
     ### Dataset ###
     dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
     Dataset preparation
     """
-    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
+    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes)
     data_module = data.module(batch)
     dataset_size = data.size()
 
@@ -65,11 +74,10 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)
-    output = trainer.test(model,datamodule=data_module)
-
-    print(type(output))
     #model.state_dict().keys()
-    #model.load_from_checkpoint("Baseline-F/2hl41atr/checkpoints/epoch=24-step=2400.ckpt")
+    #model.load_from_checkpoint("Category-23-optim/zok6kb79/checkpoints/epoch=29-step=19200.ckpt")
+    trainer.test(model,datamodule=data_module)
+
 
 if __name__ == '__main__':
     main()

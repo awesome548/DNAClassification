@@ -42,7 +42,7 @@ def base_labels(a,b,c,d,e,f):
       return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels),dim=0)).to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
-      def __init__(self, data:list,num_classes:int,base:int):
+      def __init__(self, data:list,num_classes:int):
 
             if num_classes == 2:
                   self.data = double_data(*data)

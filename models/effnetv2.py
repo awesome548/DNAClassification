@@ -201,9 +201,14 @@ CFGS2 =[
     [6, 160,  6, 1, 1],
     [6, 256,  6, 2, 1],
 ]
+BEST = {
+    "channel" : 128,
+    "kernel" : 23,
+    "stride" : 2,
+    "padd" : 2,
+}
 
-
-def effnetv2_s(mode,preference,convparam,cfgs=None,**kwargs):
+def effnetv2_s(mode,preference,convparam=BEST,cfgs=None,**kwargs):
     if not mode:
         cfgs = CFGS
     else:

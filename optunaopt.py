@@ -10,7 +10,7 @@ import optuna
 from dataset.dataformat import Dataformat
 from models import resnet,effnetv2_s
 import wandb
-from optim.utils import resnet_param,effnet_param,resnet_var,effnet_var
+from optim.utils import resnet_param,effnet_param
 
 
 ### TRAIN and TEST ###
@@ -45,12 +45,18 @@ def test_loop(model, device, test_loader,criterion,target_class,run):
             fp += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx != y))
             tn += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx == y))
             fn += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y))
+        
+        r = (tp)/(tp+fn)
+        p = (tp)/(tp+fp)
+        f1 = 2*(r*p)/(r+p)
         run.log({
             "test_Accuracy":(tp+tn)/(tp+tn+fp+fn),
-            "test_Recall":(tp)/(tp+fn),
-            "test_Precision":(tp)/(tp+fp),
-            "test_F1":2*( (tp)/(tp+fp) * (tp)/(tp+fn) ) / ( (tp)/(tp+fp) + (tp)/(tp+fn) ),
+            "test_Recall": r,
+            "test_Precision": p,
+            "test_F1": f1,
         })
+
+    return f1
 
 ### varible ###
 IDPATH = "/z/kiku/Dataset/ID"
@@ -60,20 +66,22 @@ BATCH = 100
 EPOCH = 20
 CUTOFF = 1500
 CLASSES = 2
-TARGET = 1
+TARGET = 0
 HEATMAP = False
-PROJECT = "Baseline4-resnet-optim"
+PROJECT = "Category45-effnet-optim"
 
 def objective(trial):
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     cutlen,mode,lr,cnn_params = effnet_param(trial)
+    #cutlen,mode,lr,cnn_params,cfgs = resnet_param(trial)
     run = wandb.init(
-        project="optuna-optim",
+        project=PROJECT,
         config={
             "cutlen" : cutlen,
             "mode" : mode,
             "lr" : lr,
             "cnnparam" : cnn_params,
+            #"cfgs" : cfgs
         },
         reinit=True,
     )
@@ -82,6 +90,7 @@ def objective(trial):
         print(f"mode : {mode}")
         print(f"lr : {lr}")
         print(f"cnn_param : {cnn_params}")
+        #print(f"cfgs : {cfgs}")
         preference = {
             "lr" : lr,
             "cutlen" : cutlen,
@@ -91,8 +100,7 @@ def objective(trial):
             "name" : ARCH,
             "heatmap" : HEATMAP,
         }
-        #cutlen,conv_1,conv_2,conv_3,conv_4,layer_1,layer_2,layer_3,layer_4,learningrate,cfgs = resnet_var(config)
-        #model = resnet(preference,cfgs)
+        #model = resnet(preference,cnnparam=cnn_params,mode=mode,cfgs=cfgs)
         model = effnetv2_s(mode[0],preference,cnn_params)
 
         dataset_size,cut_size = data_preference(CUTOFF,cutlen)
@@ -106,19 +114,20 @@ def objective(trial):
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
         print("Train Start...")
+        train_loss = 0
         for epoch in range(EPOCH):
             print('Epoch {}'.format(epoch+1))
             train_loss = train_loop(model, device, train_loader, criterion,optimizer,run)
 
         # testing with validation data
         print("Test Start...")
-        test_loop(model, device, test_loader,criterion,TARGET,run)
+        f1 = test_loop(model, device, test_loader,criterion,TARGET,run)
         # report
-    return train_loss
+    return f1
 
 if __name__ == "__main__":
     time_sta = time.time()
-    study = optuna.create_study(direction='minimize')
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=50)
 
     pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])

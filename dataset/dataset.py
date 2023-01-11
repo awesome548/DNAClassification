@@ -4,9 +4,9 @@ def double_data(a,b,c,d,e,f):
       return torch.cat((b,c))
 
 def double_labels(a,b,c,d,e,f):
-      y_b = torch.zeros(b.shape[0])
-      y_c = torch.ones(c.shape[0])
-      return (torch.cat((y_b,y_c),dim=0).clone().detach()).to(torch.int64)
+      y1 = torch.zeros(b.shape[0])
+      y2 = torch.ones(c.shape[0])
+      return (torch.cat((y1,y2),dim=0).clone().detach()).to(torch.int64)
 
 def triple_data(a,b,c,d,e,f):
       return torch.cat((a,b,c))

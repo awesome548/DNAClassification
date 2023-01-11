@@ -58,18 +58,19 @@ class Bottleneck(nn.Module):
 
 class ResNet(MyProcess):
 #class ResNet(nn.Module):
-    def __init__(self, cfgs, preference):
+    def __init__(self, cfgs,cnnparam,mode, preference):
         super(ResNet, self).__init__()
         self.lr = preference["lr"]
         classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
         self.cfgs = cfgs
+        self.mode = mode
 
 		# first block
-        output_channel = cfgs[-1][0]
-        self.chan1 = cfgs[0][0]
-        self.conv1 = nn.Conv1d(1, self.chan1, 19, padding=5, stride=3)
+        c,k,s,p = cnnparam.values()
+        self.chan1 = c 
+        self.conv1 = nn.Conv1d(1, self.chan1,k, padding=p, stride=s)
         self.bn1 = bcnorm(self.chan1)
         self.relu = nn.ReLU(inplace=True)
         self.pool = nn.MaxPool1d(2, padding=1, stride=2)
@@ -80,6 +81,7 @@ class ResNet(MyProcess):
         self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
         self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
         
+        output_channel = cfgs[-1][0]
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
         self.acc = np.array([]) 
@@ -129,7 +131,8 @@ class ResNet(MyProcess):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.pool(x)
+        if self.mode == 0:
+            x = self.pool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
@@ -151,9 +154,9 @@ CFGS =[
     [67,2]
 ]
 
-def resnet(preference,cfgs=CFGS):
+def resnet(preference,cnnparam,mode=0,cfgs=CFGS):
     """
     c : channels
     n : num of layers
     """
-    return ResNet(cfgs, preference)
+    return ResNet(cfgs, cnnparam,mode,preference)

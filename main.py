@@ -30,7 +30,7 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Category-2-3"
+    project_name = "IPSJ"
     heatmap = True
     mode = 1 # normal 0 big 1
     cfgs =[

@@ -13,68 +13,51 @@ hyperparameter_defaults = dict(
     kernel=19,
     stride=1,
     padd=0,
-    cfgs="big"
+    mode=0,
 )
 
-wandb.init(config=hyperparameter_defaults)
+EPOCH = 35
+IDPATH = "/z/kiku/Dataset/ID"
+INPATH ="/z/kiku/Dataset/Target"
+ARCH = "Effnet"
+BATCH = 100
+CUTOFF = 1500
+CLASSES = 4
+TARGET = 1
+HIDDEN = None
+PROJECT = "Baseline4-effnet-sweep"
+HEATMAP = False
+
+wandb.init(project=PROJECT,config=hyperparameter_defaults)
 # Config parameters are automatically set by W&B sweep agent
 config = wandb.config
 
+
 def main(config):
-    EPOCH = 30
-    idpath = "/z/kiku/Dataset/ID"
-    inpath ="/z/kiku/Dataset/Target"
-    arch = "Effnet"
-    batch = 64
-    cutoff = 1500
-    classes = 2
-    target = 1
-    hidden = None
-    project_name = "Category-23-optim"
-    base_classes = 2
-    heatmap = False
+    lr = config.learningrate
+    cutlen = config.cutlen
+    channel = config.channel
+    kernel = config.kernel
+    stride = config.stride
+    padd = config.padd
+    mode = config.mode
 
-    LEARNINGRATE = config.learningrate
-    CUTLEN = config.cutlen
-    CHAN = config.channel
-    KERNEL = config.kernel
-    STRIDE = config.stride
-    PADD = config.padd
-    cfgs = config.cfgs
-
-    if cfgs =="big":
-        cfgs = [
-            # t, c, n, s, SE
-            [1,  24,  2, 1, 0],
-            [4,  48,  4, 2, 0],
-            [4,  64,  4, 2, 0],
-            [4, 128,  6, 2, 1],
-            [6, 160,  6, 1, 1],
-            [6, 256,  6, 2, 1],
-            [CHAN,KERNEL,STRIDE,PADD],
-        ]
-    else:
-        cfgs = [
-            # t, c, n, s, SE
-            [1,  24,  2, 1, 0],
-            [4,  48,  4, 2, 0],
-            [4,  64,  4, 2, 0],
-            [4, 128,  4, 2, 1],
-            [6, 160,  4, 1, 1],
-            [6, 256,  4, 2, 1],
-            [CHAN,KERNEL,STRIDE,PADD],
-        ]
-
+    params = {
+        "channel" : channel,
+        "kernel" : kernel,
+        "stride" : stride,
+        "padd" : padd,
+    }
 
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,CUTLEN,LEARNINGRATE,target,EPOCH,heatmap,project_name,cfgs)
+    model,useModel = model_preference(ARCH,HIDDEN,CLASSES,cutlen,lr,TARGET,EPOCH,HEATMAP,PROJECT,mode=mode,cnn_params=params)
     ### Dataset ###
-    dataset_size,cut_size = data_preference(cutoff,CUTLEN)
+    dataset_size,cut_size = data_preference(CUTOFF,cutlen)
     """
     Dataset preparation
     """
-    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes,base_classes=base_classes)
-    data_module = data.module(batch)
+    data = Dataformat(IDPATH,INPATH,dataset_size,cut_size,num_classes=CLASSES)
+    data_module = data.module(BATCH)
     dataset_size = data.size()
 
     """
@@ -88,7 +71,7 @@ def main(config):
     )
     ### Logger ###
     wandb_logger = WandbLogger(
-        project=project_name,
+        project=PROJECT,
         config={
             "dataset_size" : dataset_size,
             "model" : useModel,

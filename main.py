@@ -43,7 +43,7 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         [6, 256,  6, 2, 1],
     ]
     ### Model ###
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,cfgs,mode)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,mode=mode)
     ### Dataset ###
     dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
@@ -70,12 +70,13 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
+        callbacks=[early_stopping],
         #callbacks=[Garbage_collector_callback()],
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)
     #model.state_dict().keys()
-    #model.load_from_checkpoint("Category-23-optim/zok6kb79/checkpoints/epoch=29-step=19200.ckpt")
+    #model.load_from_checkpoint("Baseline_resnet_sweep/oiq2owka/checkpoints/epoch=26-step=10125.ckpt")
     trainer.test(model,datamodule=data_module)
 
 

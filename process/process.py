@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch
 import os
+import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -28,7 +29,6 @@ class MyProcess(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self.forward(x,text="test")
-        y_hat_idx = y_hat.max(dim=1).indices
 
         ### Loss ###
         loss = self.loss_fn(y_hat,y)
@@ -38,36 +38,36 @@ class MyProcess(pl.LightningModule):
         if self.pref["heatmap"]:
             self.labels = torch.hstack((self.labels,y.clone().detach()))
         ### Metrics ###
-        """
-        target = self.pref["target"]
-        acc = (y == y_hat_idx).float().mean().item()
-        self.acc = np.append(self.acc,acc)
+        y_hat = y_hat.max(dim=1).indices
 
-        y_hat_idx = (y_hat_idx == target)
-        y = (y == target)
-        self.metric['tp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx == y))
-        self.metric['fp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx != y))
-        self.metric['tn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx == y))
-        self.metric['fn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y))
+        target = self.pref["target"]
+        acc = (y == y_hat).float().mean().item()
+        self.acc = np.append(self.acc,acc)
+        y_hat_idx = (y_hat == target)
+        y_idx = (y == target)
+        self.metric['tp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx == y_idx))
+        self.metric['fp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx != y_idx))
+        self.metric['tn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx == y_idx))
+        self.metric['fn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y_idx))
         """
-        return {'test_loss':loss,'preds':y_hat_idx,'target':y}
+        """
+        return {'test_loss':loss,'preds':y_hat,'target':y}
 
     def test_epoch_end(self,outputs):
         ### Valuables ###
         _,cutlen,n_class,epoch,target,name,heatmap,project = self.pref.values()
         ### Merics ###
-        """
         tp = self.metric['tp']
         fp = self.metric['fp']
         tn = self.metric['tn']
         fn = self.metric['fn']
-        self.log("test_Accuracy",self.acc.mean())
-        self.log("test_Accuracy2",(tp+tn)/(tp+tn+fp+fn))
-        self.log("test_Recall",(tp)/(tp+fn))
-        self.log("test_Precision",(tp)/(tp+fp))
-        self.log("test_F1",2*( (tp)/(tp+fp) * (tp)/(tp+fn) ) / ( (tp)/(tp+fp) + (tp)/(tp+fn) ))
+        self.log("Self_AccuracyMacro",self.acc.mean())
+        self.log("Self_AccuracyMicro",(tp+tn)/(tp+tn+fp+fn))
+        self.log("Self_Recall",(tp)/(tp+fn))
+        self.log("Self_Precision",(tp)/(tp+fp))
+        self.log("Self_F1",2*( (tp)/(tp+fp) * (tp)/(tp+fn) ) / ( (tp)/(tp+fp) + (tp)/(tp+fn) ))
         """
-        print(outputs)
+        """
         y_hat = outputs[0]['preds']
         y = outputs[0]['target']
 
@@ -85,11 +85,11 @@ class MyProcess(pl.LightningModule):
         f1 = F1Score(task="multiclass",num_classes=n_class,average=None)
         confmat = ConfusionMatrix(task="multiclass",num_classes=n_class)
         self.log_dict({
-            'test_macro_Accuracy' : acc(y_hat,y),
-            'test_micro_Accuracy' : acc1(y_hat,y)[target],
-            'test_Recall' : recall(y_hat,y)[target],
-            'test_Precision' : preci(y_hat,y)[target],
-            'test_F1' : f1(y_hat,y)[target],
+            'Metric_AccuracyMacro' : acc(y_hat,y),
+            'Metric_AccuracyMicro' : acc1(y_hat,y)[target],
+            'Metric_Recall' : recall(y_hat,y)[target],
+            'Metric_Precision' : preci(y_hat,y)[target],
+            'Metric_F1' : f1(y_hat,y)[target],
         })
         confmat = confmat(y_hat, y)
 
@@ -116,20 +116,20 @@ class MyProcess(pl.LightningModule):
             for i in range(n_class):
                 heat_map[:,i] = heat_map[:,i]/heat_map.sum(0)[i]
             heatmap = heat_map.cpu().detach().numpy().copy()
-            confmat = confmat.cpu().detach().numpy().copy()
 
             os.makedirs(f"heatmaps/{project}",exist_ok=True)
-            os.makedirs(f"confmat/{project}",exist_ok=True)
             ### SAVE FIG ###
             plt.figure()
             s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g")
             s.set(xlabel="label",ylabel="cluster")
-            plt.savefig(f"heatmaps/{project}/{name}-{str(cutlen)}-e{epoch}.png")
+            plt.savefig(f"heatmaps/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
             ### SAVE FIG ###
-            plt.figure()
-            s = sns.heatmap(confmat,annot=True,cmap="Reds",fmt="d")
-            s.set(xlabel="label",ylabel="cluster")
-            plt.savefig(f"confmat/{project}/{name}-{str(cutlen)}-e{epoch}.png")
+        confmat = confmat.cpu().detach().numpy().copy()
+        os.makedirs(f"confmat/{project}",exist_ok=True)
+        plt.figure()
+        s = sns.heatmap(confmat,annot=True,cmap="Reds",fmt="d")
+        s.set(xlabel="predicted",ylabel="label")
+        plt.savefig(f"confmat/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
 
 
     def configure_optimizers(self):

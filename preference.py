@@ -1,4 +1,4 @@
-from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s
+from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s,gru
 from pytorch_lightning.loggers import WandbLogger
 
 DEFAULT_CNN = {
@@ -77,12 +77,13 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
     }
     if "GRU" in str(arch):
         params = model_parameter(0,hidden)
-        model = GRU(cnn_params,pref,**params)
+        model = gru(param=params,preference=pref)
     elif "ResNet" in str(arch):
-        model = resnet(preference=pref,cnnparam=DEFAULT_CNN)
+        model = resnet(mode=mode,preference=pref,cnnparam=DEFAULT_CNN)
+        #model = resnet(preference=pref,mode=mode)
     elif "Transformer" in str(arch):
         params = model_parameter(2,hidden)
-        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=params,**pref)
+        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=params,preference=pref)
     elif "LSTM" in str(arch):
         params = model_parameter(0,hidden)
         model = LSTM(**params,**pref)

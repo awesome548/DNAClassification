@@ -147,16 +147,40 @@ class ResNet(MyProcess):
 
         return x
 
-CFGS =[
+BESTLAY =[
+    [88,2],
+    [96,2],
+    [103,2],
+    [48,2]
+]
+DEFAULT =[
     [20,2],
     [30,2],
     [45,2],
     [67,2]
 ]
 
-def resnet(preference,cnnparam,mode=0,cfgs=CFGS):
+BESTLAY1 =[
+    [80,4],
+    [42,2],
+    [109,1],
+    [21,3],
+]
+
+BESTCNN = {
+    "channel" : 121,
+    "kernel" : 19,
+    "stride" : 4,
+    "padd" : 5,
+}
+def resnet(preference,cnnparam=BESTCNN,mode=0,cfgs=DEFAULT):
     """
     c : channels
     n : num of layers
     """
+    if mode == 0:
+        cfgs = DEFAULT
+    else:
+        cfgs = BESTLAY
+    
     return ResNet(cfgs, cnnparam,mode,preference)

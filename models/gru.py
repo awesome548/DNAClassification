@@ -11,10 +11,10 @@ class GRU(MyProcess):
         self.classes = classes
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
-        dim,kernel,stride = cnn_params.values()
+        dim,kernel,stride,padd = cnn_params.values()
 
         self.conv = nn.Sequential(
-            nn.Conv1d(1,dim,kernel_size=kernel, padding=3, stride=stride),
+            nn.Conv1d(1,dim,kernel_size=kernel, padding=padd, stride=stride),
             nn.BatchNorm1d(dim),
             nn.GELU(),
             #nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
@@ -54,3 +54,13 @@ class GRU(MyProcess):
         if text == "test":
             self.cluster = torch.vstack((self.cluster,output[:,-1,].detach().clone()))
         return y_hat
+
+DEFAULT = {
+    "channel" : 92,
+    "kernel" : 15,
+    "stride" : 2,
+    "padd" : 3,
+}
+def gru(preference,param,cnnparam=DEFAULT):
+
+    return GRU(preference=preference,cnn_params=cnnparam,**param)

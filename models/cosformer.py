@@ -4,21 +4,27 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+cnnparam = {
+    "channel" : 112,
+    "kernel" : 17,
+    "stride" : 5,
+    "padd" : 5,
+}
 class Transformer_clf_model(MyProcess):
-    def __init__(self, cnn_params,model_type, model_args,preference):
+    def __init__(self, model_type, model_args,preference,cnn_params=cnnparam):
         super(Transformer_clf_model, self).__init__()
         self.lr = preference["lr"]
         classes = preference["classes"]
         cutlen = preference["cutlen"]
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
-        dim,kernel,stride = cnn_params.values()
+        dim,kernel,stride,padd = cnn_params.values()
         
         self.conv = nn.Sequential(
-            nn.Conv1d(1,dim,kernel_size=kernel, padding=3, stride=stride),
+            nn.Conv1d(1,dim,kernel_size=kernel, padding=padd, stride=stride),
             nn.BatchNorm1d(dim),
             nn.ReLU(),
-            #nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
+            nn.MaxPool1d(kernel_size=2, padding=1, stride=2),
         )
         max_len =  -(-(cutlen-kernel)//stride) + 2
         

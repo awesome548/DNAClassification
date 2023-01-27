@@ -12,15 +12,16 @@ from preference import model_preference,data_preference,model_parameter,logger_p
 @click.option('--arch', '-a', help='The path of positive sequence training set')
 
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
-@click.option('--minepoch', '-me', default=30, help='Number of epoches, default 20')
+@click.option('--minepoch', '-me', default=40, help='Number of epoches, default 20')
 @click.option('--learningrate', '-lr', default=2e-3, help='Learning rate, default 1e-3')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
 @click.option('--cutoff', '-off', default=1500, help='Cutting length')
-@click.option('--classes', '-class', default=6, help='Num of class')
+@click.option('--classes', '-class', default=7, help='Num of class')
 @click.option('--hidden', '-hidden', default=64, help='Num of class')
 @click.option('--target_class', '-t_class', default=0, help='Num of class')
+@click.option('--mode', '-m', default=0, help='0 : normal, 1: best')
 
-def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class):
+def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class,mode):
 
     #torch.manual_seed(1)
     #torch.cuda.manual_seed(1)
@@ -30,9 +31,8 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "IPSJ"
-    heatmap = True
-    mode = 1 # normal 0 big 1
+    project_name = "Bthesis"
+    heatmap = False
     cfgs =[
         # t, c, n, s, SE
         [1,  24,  2, 1, 0],
@@ -70,13 +70,12 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         accelerator="gpu",
         devices=torch.cuda.device_count(),
         logger=wandb_logger,
-        callbacks=[early_stopping],
+        #callbacks=[early_stopping],
         #callbacks=[Garbage_collector_callback()],
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)
-    #model.state_dict().keys()
-    #model.load_from_checkpoint("Baseline_resnet_sweep/oiq2owka/checkpoints/epoch=26-step=10125.ckpt")
+    #model.load_from_checkpoint("Bthesis/1tcc3i5c/checkpoints/epoch=19-step=6400.ckpt")
     trainer.test(model,datamodule=data_module)
 
 

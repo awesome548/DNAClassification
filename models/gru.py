@@ -6,12 +6,22 @@ import numpy as np
 class GRU(MyProcess):
     def __init__(self,cnn_params,preference,hiddenDim,bidirect):
         super(GRU,self).__init__()
+        ### PARAMS ###
         self.lr = preference["lr"]
         classes = preference["classes"]
-        self.classes = classes
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
         dim,kernel,stride,padd = cnn_params.values()
+        self.start_time = 0
+        self.end_time = 0
+        self.acc = np.array([]) 
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }
+        ######
 
         self.conv = nn.Sequential(
             nn.Conv1d(1,dim,kernel_size=kernel, padding=padd, stride=stride),
@@ -36,13 +46,7 @@ class GRU(MyProcess):
 
         self.fc = nn.Linear(hiddenDim, classes)
 
-        self.acc = np.array([])
-        self.metric = {
-            'tp' : 0,
-            'fp' : 0,
-            'fn' : 0,
-            'tn' : 0,
-        }
+        # output channel variable
         self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,hiddenDim).cuda()
         self.save_hyperparameters()
@@ -55,12 +59,12 @@ class GRU(MyProcess):
             self.cluster = torch.vstack((self.cluster,output[:,-1,].detach().clone()))
         return y_hat
 
-DEFAULT = {
+BEST = {
     "channel" : 92,
     "kernel" : 15,
     "stride" : 2,
     "padd" : 3,
 }
-def gru(preference,param,cnnparam=DEFAULT):
+def gru(preference,param,cnnparam=BEST):
 
     return GRU(preference=preference,cnn_params=cnnparam,**param)

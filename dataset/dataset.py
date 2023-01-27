@@ -1,62 +1,78 @@
 import torch
 
-def double_data(a,b,c,d,e,f):
-      return torch.cat((b,c))
+def in_category_data(a,b,c,d,e,f,g):
+      return torch.cat((d,e))
 
-def double_labels(a,b,c,d,e,f):
-      y1 = torch.zeros(b.shape[0])
-      y2 = torch.ones(c.shape[0])
+def in_category_label(a,b,c,d,e,f,g):
+      y1 = torch.zeros(d.shape[0])
+      y2 = torch.ones(e.shape[0])
       return (torch.cat((y1,y2),dim=0).clone().detach()).to(torch.int64)
 
-def triple_data(a,b,c,d,e,f):
-      return torch.cat((a,b,c))
+def in_category_data_2(a,b,c,d,e,f,g):
+      return torch.cat((b,c,d,e))
 
-def triple_labels(a,b,c,d,e,f):
-      y_a = torch.zeros(a.shape[0])
-      y_b = torch.ones(b.shape[0])
-      y_c = torch.ones(c.shape[0])*2
-      return (torch.cat((y_a,y_b,y_c),dim=0).clone().detach()).to(torch.int64)
+def in_category_label_2(a,b,c,d,e,f,g):
+      y1 = torch.zeros(b.shape[0])
+      y2 = torch.ones(c.shape[0])
+      y3 = torch.ones(d.shape[0])*2
+      y4 = torch.ones(e.shape[0])*3
+      return (torch.cat((y1,y2,y3,y4),dim=0).clone().detach()).to(torch.int64)
 
-def quad_data(a,b,c,d,e,f):
-      return torch.cat((a,b,c,d,e,f))
+def category_data(a,b,c,d,e,f,g):
+      return torch.cat((a,b,c,d,e,f,g))
 
-def quad_labels(a,b,c,d,e,f):
-      a_labels = torch.zeros(a.shape[0])
-      b_labels = torch.ones(b.shape[0])
-      c_labels = torch.ones(c.shape[0])
-      d_labels = torch.ones(d.shape[0])*2
-      e_labels = torch.ones(e.shape[0])*2
-      f_labels = torch.ones(f.shape[0])*3
-      return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels),dim=0)).to(torch.int64)
+def category_label(a,b,c,d,e,f,g):
+      a_lbl = torch.zeros(a.shape[0])
+      b_lbl = torch.ones(b.shape[0])
+      c_lbl = torch.ones(c.shape[0])
+      d_lbl = torch.ones(d.shape[0])*2
+      e_lbl = torch.ones(e.shape[0])*2
+      f_lbl = torch.ones(f.shape[0])*3
+      g_lbl = torch.ones(g.shape[0])*4
+      return (torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl,g_lbl),dim=0)).to(torch.int64)
 
-def base_data(a,b,c,d,e,f):
-      return torch.cat((a,b,c,d,e,f))
+def category_label_2(a,b,c,d,e,f,g):
+      a_lbl = torch.zeros(a.shape[0])
+      b_lbl = torch.ones(b.shape[0])
+      c_lbl = torch.ones(c.shape[0])
+      d_lbl = torch.ones(d.shape[0])
+      e_lbl = torch.ones(e.shape[0])
+      f_lbl = torch.ones(f.shape[0])*2
+      g_lbl = torch.ones(g.shape[0])*3
+      return (torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl,g_lbl),dim=0)).to(torch.int64)
 
-def base_labels(a,b,c,d,e,f):
+def base_data(a,b,c,d,e,f,g):
+      return torch.cat((a,b,c,d,e,f,g))
+
+def base_labels(a,b,c,d,e,f,g):
       a_labels = torch.zeros(a.shape[0])
       b_labels = torch.ones(b.shape[0])
       c_labels = torch.ones(c.shape[0])*2
       d_labels = torch.ones(d.shape[0])*3
       e_labels = torch.ones(e.shape[0])*4
       f_labels = torch.ones(f.shape[0])*5
-      return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels),dim=0)).to(torch.int64)
+      g_labels = torch.ones(g.shape[0])*6
+      return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels,g_labels),dim=0)).to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,num_classes:int):
-
             if num_classes == 2:
-                  self.data = double_data(*data)
-                  self.label = double_labels(*data)
-            elif num_classes == 3:
-                  self.data = triple_data(*data)
-                  self.label = triple_labels(*data)
+                  self.data = in_category_data(*data)
+                  self.label = in_category_label(*data)
             elif num_classes == 4:
-                  self.data = quad_data(*data)
-                  self.label = quad_labels(*data)
-            elif num_classes == 6:
+                  self.data = in_category_data_2(*data)
+                  self.label = in_category_label_2(*data)
+            elif num_classes == 5:
+                  self.data = category_data(*data)
+                  self.label = category_label(*data)
+            elif num_classes == 7:
                   self.data = base_data(*data)
                   self.label = base_labels(*data)
-
+            """
+            elif num_classes == 4:
+                  self.data = category_data(*data)
+                  self.label = category_label_2(*data)
+            """
 
       def __len__(self):
             return len(self.label)

@@ -1,4 +1,4 @@
-from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s,gru
+from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s,gru,cosformer
 from pytorch_lightning.loggers import WandbLogger
 
 DEFAULT_CNN = {
@@ -23,10 +23,10 @@ def model_parameter(flag,hidden):
     elif flag == 2:
         ##cosformer
         model_params = {
-            #'use_cos': False,
-            #'kernel': 'elu',
-            'use_cos': True,
-            'kernel': 'relu',
+            'use_cos': False,
+            'kernel': 'elu',
+            #'use_cos': True,
+            #'kernel': 'relu',
             'd_model': 112,
             'n_heads': 8,
             'n_layers': 3,
@@ -53,18 +53,6 @@ def data_preference(cutoff,cutlen):
     return dataset_size,cut_size
 
 def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,mode=0,cnn_params=None,cfgs=None):
-    """
-    cnn_params = {
-        "channel" : 112,
-        "kernel" : 23,
-        "stride" : 2,
-        "padd" : 3,
-    }
-    optim logs
-    EFFNET : 112, 23, 2, 3
-    GRU : 'out_dim': 91, 'kernel': 14, 'stride': 2
-    TRANS : out_dim': 112.0, 'kernel': 17, 'stride': 5, 'n_layers': 3, 'ffn_ratio': 8
-    """
     pref = {
         "lr" : learningrate,
         "cutlen" : cutlen,
@@ -75,15 +63,15 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
         "heatmap" : heatmap,
         "project" : project,
     }
+    ### no CNN PARAM -> best CNN
     if "GRU" in str(arch):
         params = model_parameter(0,hidden)
         model = gru(param=params,preference=pref)
     elif "ResNet" in str(arch):
-        model = resnet(mode=mode,preference=pref,cnnparam=DEFAULT_CNN)
-        #model = resnet(preference=pref,mode=mode)
+        model = resnet(cnnparam=DEFAULT_CNN,mode=mode,preference=pref)
     elif "Transformer" in str(arch):
         params = model_parameter(2,hidden)
-        model = Transformer_clf_model(cnn_params,model_type='kernel', model_args=params,preference=pref)
+        model = cosformer(preference=pref,args=params)
     elif "LSTM" in str(arch):
         params = model_parameter(0,hidden)
         model = LSTM(**params,**pref)

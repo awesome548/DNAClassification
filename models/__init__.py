@@ -6,5 +6,5 @@ from models.vit import ViT
 from models.vit_2 import ViT2
 from models.simple_vit2 import SimpleViT2
 from models.kernel_transformer import Kernel_transformer
-from models.cosformer import Transformer_clf_model
+from models.cosformer import Transformer_clf_model,cosformer
 from models.gru import GRU,gru

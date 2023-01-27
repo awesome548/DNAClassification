@@ -60,12 +60,27 @@ class ResNet(MyProcess):
 #class ResNet(nn.Module):
     def __init__(self, cfgs,cnnparam,mode, preference):
         super(ResNet, self).__init__()
+
+        ### PARAMS ###
         self.lr = preference["lr"]
         classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
         self.pref = preference
         self.cfgs = cfgs
         self.mode = mode
+        self.start_time = 0
+        self.end_time = 0
+        output_channel = cfgs[-1][0]
+        self.acc = np.array([]) 
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }
+        self.labels = torch.zeros(1).cuda()
+        self.cluster = torch.zeros(1,output_channel).cuda()
+        ######
 
 		# first block
         c,k,s,p = cnnparam.values()
@@ -81,18 +96,8 @@ class ResNet(MyProcess):
         self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
         self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
         
-        output_channel = cfgs[-1][0]
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
-        self.acc = np.array([]) 
-        self.metric = {
-            'tp' : 0,
-            'fp' : 0,
-            'fn' : 0,
-            'tn' : 0,
-        }
-        self.labels = torch.zeros(1).cuda()
-        self.cluster = torch.zeros(1,output_channel).cuda()
 
         self.save_hyperparameters()
 

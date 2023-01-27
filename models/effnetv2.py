@@ -116,6 +116,8 @@ class MBConv(nn.Module):
 class EffNetV2(MyProcess):
     def __init__(self, cfgs,convpram,preference, width_mult=1.):
         super(EffNetV2, self).__init__()
+
+        ### PARAMS ###
         self.lr = preference["lr"]
         classes = preference["classes"]
         self.loss_fn = nn.CrossEntropyLoss()
@@ -123,6 +125,17 @@ class EffNetV2(MyProcess):
         assert len(cfgs) == 6
         self.cfgs = cfgs
         self.convparam = convpram
+        self.start_time = 0
+        self.end_time = 0
+
+        self.acc = np.array([]) 
+        self.metric = {
+            'tp' : 0,
+            'fp' : 0,
+            'fn' : 0,
+            'tn' : 0,
+        }
+        #######
 
         # building first layer
         #input_channel = _make_divisible(24 * width_mult, 8)
@@ -138,22 +151,17 @@ class EffNetV2(MyProcess):
                 layers.append(block(input_channel, output_channel, s if i == 0 else 1, t, use_se))
                 input_channel = output_channel
         self.features = nn.Sequential(*layers)
+
         # building last several layers
         output_channel = _make_divisible(1792 * width_mult, 8) if width_mult > 1.0 else 1792
         self.conv = conv_1x1_bn(input_channel, output_channel)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.classifier = nn.Linear(output_channel, classes)
         
-        self.acc = np.array([]) 
-        self.metric = {
-            'tp' : 0,
-            'fp' : 0,
-            'fn' : 0,
-            'tn' : 0,
-        }
+        # ouput channel variable
         self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,output_channel).cuda()
-
+        
         self.save_hyperparameters()
         self._initialize_weights()
 
@@ -201,18 +209,24 @@ CFGS2 =[
     [6, 160,  6, 1, 1],
     [6, 256,  6, 2, 1],
 ]
-BEST = {
+BEST1 = {
     "channel" : 128,
     "kernel" : 23,
     "stride" : 2,
     "padd" : 2,
 }
+BEST2 = {
+    "channel" : 111,
+    "kernel" : 22,
+    "stride" : 3,
+    "padd" : 4,
+}
 
-def effnetv2_s(mode,preference,convparam=BEST,cfgs=None,**kwargs):
-    if not mode:
-        cfgs = CFGS
-    else:
-        cfgs = CFGS2
+def effnetv2_s(mode,preference,convparam=BEST1,cfgs=CFGS2,**kwargs):
+    if mode==0:
+        convparam = BEST1
+    elif mode == 1:
+        convparam = BEST2
     """
     Constructs a EfficientNetV2-S model
     t : expand ratio

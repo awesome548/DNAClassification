@@ -20,13 +20,16 @@ src_dir="/z/kiku/Dataset/Target"
 #python test.py -id $id_dir -i $src_dir
 #python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 500 -a ResNet -t_class 1 -m 0
 #python main.py -id $id_dir -i $src_dir -class 4 -len 3000 -b 500 -a ResNet  -t_class 1 -m 0
-#python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 500 -a ResNet  -t_class 1 -m 1
-#python main.py -id $id_dir -i $src_dir -class 5 -len 3000 -b 300 -a GRU  -hidden 128 -t_class 1
+#python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 500 -a ResNet  -t_class 1 -m 1 -me 40
+#python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 500 -a ResNet  -t_class 1 -m 1 -me 40
+python main.py -id $id_dir -i $src_dir -class 5 -len 3000 -b 300 -a GRU  -hidden 128 -t_class 1
 #python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Transformer  -t_class 1
-#python main.py -id $id_dir -i $src_dir -class 2 -len 9000 -b 100 -a Effnet -t_class 0  -m 0 -lr 0.002 -me 20
-python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Effnet -t_class 1  -m 1 
-python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Effnet -t_class 1  -m 1 
-python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Effnet -t_class 1  -m 1 
+#python main.py -id $id_dir -i $src_dir -class 2 -len 9000 -b 100 -a Effnet -t_class 0  -m 1 -me 20
+#python main.py -id $id_dir -i $src_dir -class 2 -len 9000 -b 100 -a Effnet -t_class 0  -m 1 -me 40
+#python main.py -id $id_dir -i $src_dir -class 2 -len 9000 -b 100 -a Effnet -t_class 0  -m 1 -me 20
+#python main.py -id $id_dir -i $src_dir -class 2 -len 9000 -b 100 -a Effnet -t_class 0  -m 1 -me 40
+#python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Effnet -t_class 1  -m 1 
+#python main.py -id $id_dir -i $src_dir -class 7 -len 3000 -b 100 -a Effnet -t_class 1  -m 1 
 #for j in 50 70 90 ;do
     #for i in 64 128 256;do
         #python main.py -t $id_dir -i $src_dir -class 2 -len 5000 -a GRU -b 200 -me $j -hidden $i

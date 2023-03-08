@@ -7,7 +7,7 @@ from ray import tune, air
 from ray.air import session
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
-from models import resnet,effnetv2_s
+from model import resnet,effnetv2_s
 from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search import ConcurrencyLimiter
 from ray.tune.search.optuna import OptunaSearch

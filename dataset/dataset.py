@@ -1,22 +1,30 @@
 import torch
 
-def in_category_data(a,b,c,d,e,f,g):
+def in_category_data_2(a,b,c,d,e,f,g):
       return torch.cat((d,e))
 
-def in_category_label(a,b,c,d,e,f,g):
+def in_category_label_2(a,b,c,d,e,f,g):
       y1 = torch.zeros(d.shape[0])
       y2 = torch.ones(e.shape[0])
       return (torch.cat((y1,y2),dim=0).clone().detach()).to(torch.int64)
 
-def in_category_data_2(a,b,c,d,e,f,g):
-      return torch.cat((b,c,d,e))
+def in_category_data(a,b,c,d,e,f,g):
+      return torch.cat((b,c))
 
-def in_category_label_2(a,b,c,d,e,f,g):
+def in_category_label(a,b,c,d,e,f,g):
       y1 = torch.zeros(b.shape[0])
       y2 = torch.ones(c.shape[0])
-      y3 = torch.ones(d.shape[0])*2
-      y4 = torch.ones(e.shape[0])*3
-      return (torch.cat((y1,y2,y3,y4),dim=0).clone().detach()).to(torch.int64)
+      return (torch.cat((y1,y2),dim=0).clone().detach()).to(torch.int64)
+
+def mix_category_data(a,b,c,d,e,f,g):
+      d = d[:d.shape[0]//2,]
+      return torch.cat((b,c,d))
+
+def mix_category_label(a,b,c,d,e,f,g):
+      y1 = torch.zeros(b.shape[0])
+      y2 = torch.ones(c.shape[0])
+      y3 = torch.ones(d.shape[0]//2)
+      return (torch.cat((y1,y2,y3),dim=0).clone().detach()).to(torch.int64)
 
 def category_data(a,b,c,d,e,f,g):
       return torch.cat((a,b,c,d,e,f,g))
@@ -57,11 +65,15 @@ def base_labels(a,b,c,d,e,f,g):
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,num_classes:int):
             if num_classes == 2:
+                  #self.data = in_category_data_2(*data)
+                  #self.label = in_category_label_2(*data)
                   self.data = in_category_data(*data)
                   self.label = in_category_label(*data)
-            elif num_classes == 4:
-                  self.data = in_category_data_2(*data)
-                  self.label = in_category_label_2(*data)
+            #if num_classes == 2:
+                  #self.data = mix_category_data(*data)
+                  #self.label = mix_category_label(*data)
+                  #print(self.data.shape)
+                  #print(self.label.shape)
             elif num_classes == 5:
                   self.data = category_data(*data)
                   self.label = category_label(*data)

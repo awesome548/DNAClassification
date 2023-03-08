@@ -1,4 +1,4 @@
-from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU,effnetv2_s,gru,cosformer
+from model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,myGRU,effnetv2_s,gru,cosformer
 from pytorch_lightning.loggers import WandbLogger
 
 DEFAULT_CNN = {
@@ -12,7 +12,7 @@ def model_parameter(flag,hidden):
         ##LSTM
         model_params = {
             'hiddenDim' : hidden,
-            'bidirect' : True,
+            'bidirect' : False,
         }
     elif flag == 1:
         ##transformer

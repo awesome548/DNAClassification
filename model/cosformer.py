@@ -1,4 +1,4 @@
-from models import Kernel_transformer 
+from model import Kernel_transformer 
 from process import MyProcess
 import torch
 import torch.nn as nn

@@ -6,7 +6,6 @@ import time
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
-from torchmetrics.classification import MulticlassAccuracy,MulticlassPrecision,MulticlassRecall,MulticlassF1Score
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
 
 class MyProcess(pl.LightningModule):
@@ -48,15 +47,6 @@ class MyProcess(pl.LightningModule):
         acc = (y == y_hat_idx).float().mean().item()
         self.acc = np.append(self.acc,acc)
 
-        """
-        target = self.pref["target"]
-        y_hat_idx = (y_hat == target)
-        y_idx = (y == target)
-        self.metric['tp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx == y_idx))
-        self.metric['fp'] += torch.count_nonzero((y_hat_idx == True) & (y_hat_idx != y_idx))
-        self.metric['tn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx == y_idx))
-        self.metric['fn'] += torch.count_nonzero((y_hat_idx == False) & (y_hat_idx != y_idx))
-        """
         return {'test_loss':loss,'preds':y_hat,'preds_idx':y_hat_idx,'target':y}
 
     def test_epoch_end(self,outputs):
@@ -67,18 +57,6 @@ class MyProcess(pl.LightningModule):
         ### Valuables ###
         _,cutlen,n_class,epoch,target,name,heatmap,project = self.pref.values()
         ### Merics ###
-        """
-        tp = self.metric['tp']
-        fp = self.metric['fp']
-        tn = self.metric['tn']
-        fn = self.metric['fn']
-        self.log_dict({
-            "Self_AccuracyMicro" : (tp+tn)/(tp+tn+fp+fn),
-            "Self_Recall" : (tp)/(tp+fn),
-            "Self_Precision" : (tp)/(tp+fp),
-            "Self_F1": 2*( (tp)/(tp+fp) * (tp)/(tp+fn) ) / ( (tp)/(tp+fp) + (tp)/(tp+fn) ),
-        })
-        """
         y_hat = outputs[0]['preds']
         y_hat_idx = outputs[0]['preds_idx']
         y = outputs[0]['target']

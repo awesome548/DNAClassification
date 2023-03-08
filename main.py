@@ -2,6 +2,7 @@ import torch
 import click
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from model import effnetv2,EffNetV2
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter,logger_preference
 
@@ -31,7 +32,7 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     """
     Preference
     """
-    project_name = "Bthesis"
+    project_name = "2Stage-Analysis"
     heatmap = False
     cfgs =[
         # t, c, n, s, SE
@@ -75,7 +76,7 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         #callbacks=[model_checkpoint],
     )
     trainer.fit(model,datamodule=data_module)
-    #model.load_from_checkpoint("Bthesis/1tcc3i5c/checkpoints/epoch=19-step=6400.ckpt")
+    #model = EffNetV2.load_from_checkpoint("model_log/Effnet-c2-BC/checkpoints/epoch=19-step=6400.ckpt")
     trainer.test(model,datamodule=data_module)
 
 

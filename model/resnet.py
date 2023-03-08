@@ -3,7 +3,6 @@ import torch.nn as nn
 from process import MyProcess
 import numpy as np
 
-### TORCH METRICS ####
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):
     return nn.Conv1d(in_channel, out_channel, kernel_size=3, stride=stride,
 				   padding=padding, bias=False, dilation=padding, groups=groups)

@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-class GRU(MyProcess):
+class myGRU(MyProcess):
     def __init__(self,cnn_params,preference,hiddenDim,bidirect):
-        super(GRU,self).__init__()
+        super(myGRU,self).__init__()
         ### PARAMS ###
         self.lr = preference["lr"]
         classes = preference["classes"]
@@ -67,4 +67,4 @@ BEST = {
 }
 def gru(preference,param,cnnparam=BEST):
 
-    return GRU(preference=preference,cnn_params=cnnparam,**param)
+    return myGRU(preference=preference,cnn_params=cnnparam,**param)

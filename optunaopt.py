@@ -3,12 +3,12 @@ import torch.nn  as nn
 import time
 from dataset.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
-from models import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
+from model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
 from optuna.trial import TrialState
 import torch.utils.data
 import optuna 
 from dataset.dataformat import Dataformat
-from models import resnet,effnetv2_s
+from model import resnet,effnetv2_s
 import wandb
 from optim.utils import resnet_param,effnet_param
 

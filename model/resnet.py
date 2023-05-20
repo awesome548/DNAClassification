@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from process import MyProcess
+from ops_process import MyProcess
 import numpy as np
 
 def conv3(in_channel, out_channel, stride=1, padding=1, groups=1):

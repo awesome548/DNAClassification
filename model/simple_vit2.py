@@ -3,7 +3,7 @@ from torch import nn
 import math
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from process import MyProcess
+from ops_process import MyProcess
 import numpy as np
 
 """

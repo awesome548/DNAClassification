@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import math
-from process import MyProcess
+from ops_process import MyProcess
 
 #__all__ = ['effnetv2_s', 'effnetv2_m', 'effnetv2_l', 'effnetv2_xl']
 

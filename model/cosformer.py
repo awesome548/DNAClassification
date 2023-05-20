@@ -1,5 +1,5 @@
 from model import Kernel_transformer 
-from process import MyProcess
+from ops_process import MyProcess
 import torch
 import torch.nn as nn
 import numpy as np

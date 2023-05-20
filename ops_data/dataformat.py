@@ -1,3 +1,4 @@
+import os
 import glob
 import torch
 from torch.utils.data import DataLoader
@@ -39,13 +40,22 @@ def base_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     return train,val,test,dataset_size
 
 class Dataformat:
-    def __init__(self,target: list,inpath:list,dataset_size:int,cut_size:dict,num_classes:int) -> None:
-        idset = glob.glob(target+'/*.txt')
-        dataset = glob.glob(inpath+'/*')
-        idset.sort()
-        dataset.sort()
+    def __init__(self,ids_dir: list,fast5_dir:list,dataset_size:int,cut_size:dict,num_classes:int) -> None:
+        fast5_set = []
+        id_set = []
+        if os.path.exists(fast5_dir):
+            for name in glob.glob(fast5_dir+'/*'):
+                dirname = os.path.abspath(name) + '/fast5'
+                if os.path.exists(dirname):
+                    fast5_set.append(dirname)
+                    id_set.append(ids_dir + f'/{os.path.basename(name)}.txt')
+        else:
+            raise FileNotFoundError("ディレクトリがありません")
 
-        train, val, test, dataset_size = base_class(idset,dataset,dataset_size,cut_size)
+        id_set.sort()
+        fast5_set.sort()
+
+        train, val, test, dataset_size = base_class(id_set,fast5_set,dataset_size,cut_size)
 
         self.training_set = MultiDataset(train,num_classes)
         self.validation_set = MultiDataset(val,num_classes)

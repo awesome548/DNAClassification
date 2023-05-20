@@ -6,10 +6,10 @@ from ops_data.dataformat import Dataformat
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,data_preference,model_parameter,logger_preference
 
+IDLIST="/z/kiku/Dataset/ID"
+FAST5="/z/kiku/Dataset/Target"
 
 @click.command()
-@click.option('--idpath', '-id', help='', type=click.Path(exists=True))
-@click.option('--inpath', '-i', help='', type=click.Path(exists=True))
 @click.option('--arch', '-a', help='Name of Architecture')
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
 @click.option('--minepoch', '-me', default=40, help='Number of min epoches')
@@ -21,7 +21,7 @@ from preference import model_preference,data_preference,model_parameter,logger_p
 @click.option('--target_class', '-t_class', default=0, help='Target class index')
 @click.option('--mode', '-m', default=0, help='0 : normal, 1: best')
 
-def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class,mode):
+def main(arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class,mode):
 
     ## 結果を同じにする
     #torch.manual_seed(1)
@@ -29,6 +29,16 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     #torch.cuda.manual_seed_all(1)
     #torch.backends.cudnn.deterministic = True
     #torch.set_deterministic_debug_mode(True)
+    """
+    Dataset preparation
+    """
+    ### Dataset  設定
+    dataset_size,cut_size = data_preference(cutoff,cutlen)
+    # id list -> idの.txtが入ったディレクトリ
+    # fast5 -> 種のフォルダが入っているディレクトリ
+    data = Dataformat(IDLIST,FAST5,dataset_size,cut_size,num_classes=classes)
+    data_module = data.module(batch)
+    dataset_size = data.size()
     """
     Preference
     """
@@ -45,15 +55,6 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
     ]
     # Model 設定
     model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,mode=mode)
-    # Dataset  設定
-    dataset_size,cut_size = data_preference(cutoff,cutlen)
-    """
-    Dataset preparation
-    """
-    data = Dataformat(idpath,inpath,dataset_size,cut_size,num_classes=classes)
-    data_module = data.module(batch)
-    dataset_size = data.size()
-
     """
     Training
     """

@@ -1,4 +1,4 @@
-from process import MyProcess 
+from ops_process import MyProcess 
 import torch.nn as nn
 import torch
 import numpy as np

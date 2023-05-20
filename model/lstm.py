@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from process import MyProcess 
+from ops_process import MyProcess 
 import numpy as np
 
 class LSTM(MyProcess):

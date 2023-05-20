@@ -1,0 +1,22 @@
+__pycache__/
+.vscode
+
+#general directory
+logs/
+wandb/
+Heatmap/
+Fastq/
+model_log/
+Bthesis_log/
+Confusion_matrix/
+
+#Wandb model 
+test/
+test.py
+venv/
+Baseline*/
+Category*/
+IPSJ/
+Bthesis/
+2Stage-Analysis/
+

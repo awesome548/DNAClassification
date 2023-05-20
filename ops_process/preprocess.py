@@ -1,10 +1,10 @@
-from ont_fast5_api.fast5_interface import get_fast5_file
 import os
 import glob
 import torch
+import random
 import numpy as np
 from scipy import stats
-import random
+from ont_fast5_api.fast5_interface import get_fast5_file
 
 def mad_normalization(data_test,filepath,maxlen):
     mad = stats.median_abs_deviation(data_test, axis=1, scale='normal')

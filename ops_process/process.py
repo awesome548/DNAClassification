@@ -1,12 +1,17 @@
-import pytorch_lightning as pl
 import torch
 import os
-import numpy as np
 import time
-from sklearn.cluster import KMeans
+import numpy as np
+import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.cluster import KMeans
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
+
+# SAVE directory path
+CONFMAT = "Confusion_matrix"
+HEATMAP = "Heatmap"
+
 
 class MyProcess(pl.LightningModule):
     def training_step(self, batch, batch_idx):
@@ -118,19 +123,19 @@ class MyProcess(pl.LightningModule):
                 heat_map[:,i] = heat_map[:,i]/heat_map.sum(0)[i]
             heatmap = heat_map.cpu().detach().numpy().copy()
 
-            os.makedirs(f"heatmaps/{project}",exist_ok=True)
+            os.makedirs(f"{HEATMAP}/{project}",exist_ok=True)
             ### SAVE FIG ###
             plt.figure()
             s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g")
             s.set(xlabel="label",ylabel="cluster")
-            plt.savefig(f"heatmaps/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}-{inference_time}.png")
+            plt.savefig(f"{HEATMAP}/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}-{inference_time}.png")
             ### SAVE FIG ###
         confmat = confmat.cpu().detach().numpy().copy()
-        os.makedirs(f"confmat/{project}",exist_ok=True)
+        os.makedirs(f"{CONFMAT}/{project}",exist_ok=True)
         plt.figure()
         s = sns.heatmap(confmat,annot=True,cmap="Reds",fmt="d")
         s.set(xlabel="predicted",ylabel="label")
-        plt.savefig(f"confmat/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}-{inference_time}.png")
+        plt.savefig(f"{CONFMAT}/{project}/{name}-{str(cutlen)}-e{epoch}-c{n_class}-{inference_time}.png")
 
 
     def configure_optimizers(self):

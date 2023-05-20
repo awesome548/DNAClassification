@@ -1,8 +1,8 @@
-import click
 import os
 import glob
+import click
+from ops_data.dataformat import Dataformat
 from ont_fast5_api.fast5_interface import get_fast5_file
-from dataset.dataformat import Dataformat
 
 ########################
 #### Load the data #####

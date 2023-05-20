@@ -1,29 +1,29 @@
 import torch
 import click
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from model import effnetv2,EffNetV2
-from dataset.dataformat import Dataformat
+from ops_data.dataformat import Dataformat
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,data_preference,model_parameter,logger_preference
 
 
 @click.command()
-@click.option('--idpath', '-id', help='The path of positive sequence training set', type=click.Path(exists=True))
-@click.option('--inpath', '-i', help='The path of positive sequence training set', type=click.Path(exists=True))
-@click.option('--arch', '-a', help='The path of positive sequence training set')
-
+@click.option('--idpath', '-id', help='', type=click.Path(exists=True))
+@click.option('--inpath', '-i', help='', type=click.Path(exists=True))
+@click.option('--arch', '-a', help='Name of Architecture')
 @click.option('--batch', '-b', default=100, help='Batch size, default 1000')
-@click.option('--minepoch', '-me', default=40, help='Number of epoches, default 20')
-@click.option('--learningrate', '-lr', default=2e-3, help='Learning rate, default 1e-3')
+@click.option('--minepoch', '-me', default=40, help='Number of min epoches')
+@click.option('--learningrate', '-lr', default=2e-3, help='Learning rate')
 @click.option('--cutlen', '-len', default=3000, help='Cutting length')
-@click.option('--cutoff', '-off', default=1500, help='Cutting length')
+@click.option('--cutoff', '-off', default=1500, help='Cutting off length')
 @click.option('--classes', '-class', default=7, help='Num of class')
-@click.option('--hidden', '-hidden', default=64, help='Num of class')
-@click.option('--target_class', '-t_class', default=0, help='Num of class')
+@click.option('--hidden', '-hidden', default=64, help='dim of hidden layer')
+@click.option('--target_class', '-t_class', default=0, help='Target class index')
 @click.option('--mode', '-m', default=0, help='0 : normal, 1: best')
 
 def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes,hidden,target_class,mode):
 
+    ## 結果を同じにする
     #torch.manual_seed(1)
     #torch.cuda.manual_seed(1)
     #torch.cuda.manual_seed_all(1)
@@ -43,9 +43,9 @@ def main(idpath,inpath,arch, batch, minepoch, learningrate,cutlen,cutoff,classes
         [6, 160,  6, 1, 1],
         [6, 256,  6, 2, 1],
     ]
-    ### Model ###
+    # Model 設定
     model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,mode=mode)
-    ### Dataset ###
+    # Dataset  設定
     dataset_size,cut_size = data_preference(cutoff,cutlen)
     """
     Dataset preparation

@@ -1,7 +1,9 @@
-from process import Preprocess,calu_size
-import torch
 import glob
+import torch
 from torch.utils.data import DataLoader
+from ops_data.dataset import MultiDataset
+from ops_data.datamodule import DataModule
+from ops_process import Preprocess,calu_size
 
 def base_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     cutoff,cutlen,maxlen,stride = cut_size.values()
@@ -36,8 +38,8 @@ def base_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     
     return train,val,test,dataset_size
 
-class Dataformat2:
-    def __init__(self,target: list,inpath:list,dataset_size:int,cut_size:dict,num_classes:int,idx:list) -> None:
+class Dataformat:
+    def __init__(self,target: list,inpath:list,dataset_size:int,cut_size:dict,num_classes:int) -> None:
         idset = glob.glob(target+'/*.txt')
         dataset = glob.glob(inpath+'/*')
         idset.sort()
@@ -45,8 +47,23 @@ class Dataformat2:
 
         train, val, test, dataset_size = base_class(idset,dataset,dataset_size,cut_size)
 
-        self.test_set = MultiDataset2(test,num_classes,idx)
+        self.training_set = MultiDataset(train,num_classes)
+        self.validation_set = MultiDataset(val,num_classes)
+        self.test_set = MultiDataset(test,num_classes)
+        val_datsize = len(self.training_set)+len(self.validation_set)+len(self.test_set)
+        tmp_size = (dataset_size * 7) if num_classes >= 5 else (dataset_size *num_classes)
+        assert val_datsize == tmp_size
+        self.dataset = dataset_size
         pass
+
+    def module(self,batch):
+        return DataModule(self.training_set,self.validation_set,self.test_set,batch_size=batch)
+
+    def loader(self,batch):
+        params = {'batch_size': batch,
+				'shuffle': True,
+				'num_workers': 24}
+        return DataLoader(self.training_set,**params),DataLoader(self.validation_set,**params),DataLoader(self.test_set,**params)
     
     def test_loader(self,batch):
         params = {'batch_size': batch,
@@ -54,33 +71,7 @@ class Dataformat2:
 				'num_workers': 24}
         return DataLoader(self.test_set,**params)
 
+    def size(self) -> int:
+        return self.dataset
 
-def category_data(a,b,c,d,e,f,g,idx):
-    idx = idx.cpu()
-    return torch.cat((a,b,c,d,e,f,g))[idx,:]
-
-def category_label(a,b,c,d,e,f,g,idx):
-    idx = idx.cpu()
-    a_lbl = torch.ones(a.shape[0])
-    b_lbl = torch.zeros(b.shape[0])
-    c_lbl = torch.ones(c.shape[0])
-    d_lbl = torch.ones(d.shape[0])
-    e_lbl = torch.ones(e.shape[0])
-    f_lbl = torch.ones(f.shape[0])
-    g_lbl = torch.ones(g.shape[0])
-    return (torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl,g_lbl),dim=0))[idx].to(torch.int64)
-
-
-class MultiDataset2(torch.utils.data.Dataset):
-      def __init__(self, data:list,num_classes:int,idx:list):
-        self.data = category_data(*data,idx)
-        self.label = category_label(*data,idx)
-
-      def __len__(self):
-            return len(self.label)
-
-      def __getitem__(self, index):
-            X = self.data[index]
-            y = self.label[index]
-            return X, y
 

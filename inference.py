@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from dataset.in_category_data import Dataformat2
-from dataset.dataformat import Dataformat
+from ops_data.in_category_data import Dataformat2
+from ops_data.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
 from model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,myGRU,EffNetV2,ResNet
 import torch.utils.data

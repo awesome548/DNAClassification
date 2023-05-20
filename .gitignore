@@ -9,6 +9,7 @@ Fastq/
 model_log/
 Bthesis_log/
 Confusion_matrix/
+misc/
 
 #Wandb model 
 test/

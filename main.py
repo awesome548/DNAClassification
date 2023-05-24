@@ -8,12 +8,14 @@ from model import effnetv2,EffNetV2
 from ops_data.dataformat import Dataformat
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,model_parameter,logger_preference
+from pytorch_lightning.loggers import TensorBoardLogger
+
 
 
 @click.command()
 @click.option('--arch', '-a', help='Name of Architecture')
 @click.option('--batch', '-b', default=1000, help='Batch size, default 1000')
-@click.option('--minepoch', '-me', default=20, help='Number of min epoches')
+@click.option('--minepoch', '-me', default=10, help='Number of min epoches')
 @click.option('--learningrate', '-lr', default=1e-2, help='Learning rate')
 @click.option('--hidden', '-hidden', default=64, help='dim of hidden layer')
 @click.option('--target_class', '-t_class', default=0, help='Target class index')
@@ -77,11 +79,13 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
         mode="min",
         patience=10,
     )
+    logger = TensorBoardLogger("tb_logs", name="my_model")
     ### Train ###
     trainer = pl.Trainer(
         max_epochs=minepoch,
         accelerator="gpu",
         devices=torch.cuda.device_count(),
+        logger=logger
         #callbacks=[early_stopping],
         #callbacks=[Garbage_collector_callback()],
         #callbacks=[model_checkpoint],

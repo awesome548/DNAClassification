@@ -46,6 +46,8 @@ class Dataformat:
             raise FileNotFoundError("ディレクトリがありません")
         num_class = len(id_set)
 
+        fast5_set.sort()
+        id_set.sort()
         train, val, test, dataset_size = base_class(id_set,fast5_set,dataset_size,cut_size)
 
         self.training_set = MultiDataset(train,num_class)

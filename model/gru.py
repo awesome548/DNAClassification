@@ -60,7 +60,7 @@ class myGRU(MyProcess):
         return y_hat
 
 BEST = {
-    "channel" : 92,
+    "channel" : 90,
     "kernel" : 15,
     "stride" : 2,
     "padd" : 3,

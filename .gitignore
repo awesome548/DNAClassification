@@ -13,6 +13,7 @@ Confusion_matrix/
 misc/
 torch_data/
 lightning_logs/
+tb_logs/
 
 #Wandb model
 test/

@@ -4,32 +4,18 @@ import glob
 import click
 from ops_data.dataformat import Dataformat
 from ont_fast5_api.fast5_interface import get_fast5_file
+from dotenv import load_dotenv
 
-OUTPUT = "/z/kiku/Basecaller/DNAClassification/Id_list"
-FAST5 = "/z/kiku/Agn_Tar"
-MISC = "/z/kiku/Basecaller/DNAClassfication/misc"
-# Args setting
-
-
-########################
-#### Load the data #####
-########################
-def get_raw_data(fileNM, PNlist, cutoff,maxlen):
-	with get_fast5_file(fileNM, mode="r") as f5:
-		for read in f5.get_reads():
-			raw_data = read.get_raw_data(scale=True)
-			if len(raw_data) >= (cutoff + maxlen):
-					PNlist.append(read.read_id)
-	return PNlist
-
-@click.command()
-@click.option('--cutlen', '-len', default=4000, help='Cutting length')
-@click.option('--cutoff', '-off', default=1500, help='Cutting length')
-@click.option('--maxlen', '-m', default=20000, help='Cutoff the first c signals')
-def main(cutlen,cutoff,maxlen):
+def main():
+	load_dotenv()
+	IDLIST = os.environ['IDLIST']
+	FAST5 = os.environ['FAST5']
+	MISC = os.environ['MISC']
+	cutoff = os.environ['CUTOFF']
+	maxlen = os.environ['MAXLEN']
 	### make output folder
-	if not os.path.exists(OUTPUT):
-		os.makedirs(OUTPUT)
+	if not os.path.exists(IDLIST):
+		os.makedirs(IDLIST)
 
 	species = []
 	input_dir = []
@@ -47,25 +33,27 @@ def main(cutlen,cutoff,maxlen):
 	print(input_dir)
 
 	### load data
-	target_list = []
 	output = {}
 	for spe,input in zip(species,input_dir):
-		if (os.path.isfile(OUTPUT + '/' + spe + '.txt')) is False:
+		if (os.path.isfile(IDLIST + '/' + spe + '.txt')) is False:
+			ids_list = []
 			for fileNM in glob.glob(input + '/*.fast5'):
-				target_list = get_raw_data(fileNM, target_list, cutoff,maxlen)
+				with get_fast5_file(fileNM, mode="r") as f5:
+					for read in f5.get_reads():
+						raw_data = read.get_raw_data(scale=True)
+						if len(raw_data) >= (cutoff + maxlen):
+								ids_list.append(read.read_id)
 
-			num_tar = 0
-			with open(OUTPUT + '/' + spe + '.txt', 'a') as f:
-				for cont in target_list:
-					num_tar +=1
-					f.write(str(cont)+'\n')
-			output[spe] = num_tar
-			print("target : " + str(num_tar))
+			with open(IDLIST + '/' + spe + '.txt', 'a') as f:
+				for id in ids_list:
+					f.write(str(id)+'\n')
+			output[spe] = len(ids_list)
+			print("target : " + str(len(ids_list)))
 		else:
 			raise FileExistsError('text file already exists')
 	
 	with open(MISC + '/fast5_id_summary.txt','a') as f:
-		for i in output.keys:
+		for i in output.keys():
 			f.write(str(i)+'\n')
 			f.write('num : '+str(output[i])+'\n')
 

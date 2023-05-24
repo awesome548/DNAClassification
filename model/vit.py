@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 import math
-from process import MyProcess
+from ops_process import MyProcess
 from einops import repeat,rearrange
 
 """

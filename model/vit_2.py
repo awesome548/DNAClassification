@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from process import MyProcess
+from ops_process import MyProcess
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 

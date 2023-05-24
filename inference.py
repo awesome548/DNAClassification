@@ -1,11 +1,11 @@
 import torch
+import wandb
+import torch.utils.data
 import numpy as np
-from ops_data.in_category_data import Dataformat2
-from ops_data.dataformat import Dataformat
 from preference import model_preference,data_preference,model_parameter
 from model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,myGRU,EffNetV2,ResNet
-import torch.utils.data
-import wandb
+from ops_data.in_category_data import Dataformat2
+from ops_data.dataformat import Dataformat
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
 
 

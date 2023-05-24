@@ -49,18 +49,14 @@ def category_label_2(a,b,c,d,e,f,g):
       g_lbl = torch.ones(g.shape[0])*3
       return (torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl,g_lbl),dim=0)).to(torch.int64)
 
-def base_data(a,b,c,d,e,f,g):
-      return torch.cat((a,b,c,d,e,f,g))
+def base_data(data):
+      return torch.cat(data)
 
-def base_labels(a,b,c,d,e,f,g):
-      a_labels = torch.zeros(a.shape[0])
-      b_labels = torch.ones(b.shape[0])
-      c_labels = torch.ones(c.shape[0])*2
-      d_labels = torch.ones(d.shape[0])*3
-      e_labels = torch.ones(e.shape[0])*4
-      f_labels = torch.ones(f.shape[0])*5
-      g_labels = torch.ones(g.shape[0])*6
-      return (torch.cat((a_labels,b_labels,c_labels,d_labels,e_labels,f_labels,g_labels),dim=0)).to(torch.int64)
+def base_labels(data):
+      label_list = []
+      for i in range(0,len(data)):
+            label_list.append(torch.ones(data[i].shape[0])*i)
+      return (torch.cat(label_list,dim=0)).to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,num_classes:int):
@@ -80,11 +76,9 @@ class MultiDataset(torch.utils.data.Dataset):
             elif num_classes == 7:
                   self.data = base_data(*data)
                   self.label = base_labels(*data)
-            """
-            elif num_classes == 4:
-                  self.data = category_data(*data)
-                  self.label = category_label_2(*data)
-            """
+            else:
+                  self.data = base_data(data)
+                  self.label = base_labels(data)
 
       def __len__(self):
             return len(self.label)

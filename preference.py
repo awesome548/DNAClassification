@@ -41,16 +41,6 @@ def model_parameter(flag,hidden):
 
     return model_params
 
-def data_preference(cutoff,cutlen):
-    dataset_size = 10000
-    
-    cut_size = {
-        'cutoff' : cutoff,
-        'cutlen' : cutlen,
-        'maxlen' : 10000,
-        'stride' : 5000 if cutlen<=5000 else (10000-cutlen),
-    }
-    return dataset_size,cut_size
 
 def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,mode=0,cnn_params=None,cfgs=None):
     pref = {

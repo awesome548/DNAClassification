@@ -1,5 +1,6 @@
 __pycache__/
 .vscode
+.env
 
 #general directory
 logs/
@@ -10,8 +11,11 @@ model_log/
 Bthesis_log/
 Confusion_matrix/
 misc/
+torch_data/
+lightning_logs/
+tb_logs/
 
-#Wandb model 
+#Wandb model
 test/
 test.py
 venv/

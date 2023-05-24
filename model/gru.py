@@ -1,4 +1,4 @@
-from process import MyProcess 
+from ops_process import MyProcess 
 import torch.nn as nn
 import torch
 import numpy as np
@@ -60,7 +60,7 @@ class myGRU(MyProcess):
         return y_hat
 
 BEST = {
-    "channel" : 92,
+    "channel" : 90,
     "kernel" : 15,
     "stride" : 2,
     "padd" : 3,

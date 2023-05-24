@@ -54,7 +54,7 @@ class MyProcess(pl.LightningModule):
 
         return {'test_loss':loss,'preds':y_hat,'preds_idx':y_hat_idx,'target':y}
 
-    def test_epoch_end(self,outputs):
+    def on_test_epoch_end(self,outputs):
         self.end_time = time.perf_counter()
         inference_time = self.end_time - self.start_time
         self.log("inference_time",inference_time)

@@ -39,7 +39,10 @@ def category_label(a,b,c,d,e,f,g):
       g_lbl = torch.ones(g.shape[0])*4
       return (torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl,g_lbl),dim=0)).to(torch.int64)
 
-def category_label_2(a,b,c,d,e,f,g):
+"""
+属 genus、 科 family、目 order、綱 class、門 phylum、界 kingdom、超界 domain
+"""
+def genus(a,b,c,d,e,f,g):
       a_lbl = torch.zeros(a.shape[0])
       b_lbl = torch.ones(b.shape[0])
       c_lbl = torch.ones(c.shape[0])

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-class myGRU(MyProcess):
+class myGRU(nn.Module):
     def __init__(self,cnn_params,preference,hiddenDim,bidirect):
         super(myGRU,self).__init__()
         ### PARAMS ###

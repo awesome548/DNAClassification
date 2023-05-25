@@ -1,15 +1,53 @@
 import torch
+from torch import nn
 import os
 import click
-import sys
+import time
+import math
+import numpy as np
 from dotenv import load_dotenv
 import pytorch_lightning as pl
 from model import effnetv2,EffNetV2
 from ops_data.dataformat import Dataformat
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,model_parameter,logger_preference
-from pytorch_lightning.loggers import TensorBoardLogger
 
+
+### TRAIN and TEST ###
+def train_loop(model, device, train_loader, criterion,optimizer,epoch) -> None:
+    model.train()
+    train_loss = 0
+    log_interval = 90 # total 185だった
+    for batch,(data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = criterion(output, target)
+        loss.backward()
+        optimizer.step()
+        train_loss += loss.item()
+
+        if batch % log_interval == 0 and batch > 0:
+            cur_loss = train_loss / log_interval
+            print('| epoch {:3d} | {:5d}/{:5d} batches | loss {:5.2f} | ppl {:8.2f}'.format(
+                        epoch, batch, len(train_loader) ,cur_loss, math.exp(cur_loss)))
+            train_loss = 0
+
+def test_loop(model, device, test_loader,criterion,target_class,run):
+    model.eval()
+    with torch.no_grad():
+        target = np.array(())
+        output = np.array(())
+        for x, y in test_loader:
+            x, y = x.to(device), y.to(device)
+            y_hat = model(x)
+            loss = criterion(y_hat,y)
+            target.append(y.cpu().detach().numpy().copy())
+            output.append(y_hat.cpu().detach().numpy().copy())
+
+        y_hat_idx = output.max(dim=1).indices
+        y_hat_idx = (y_hat_idx == target_class)
+        y = (target == target_class)
 
 
 @click.command()
@@ -51,7 +89,7 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
     data = Dataformat(IDLIST,FAST5,dataset_size,cut_size)
-    data_module = data.module(batch)
+    train_loader,val_dataloader,test_loader = data.loader(batch)
     dataset_size = data.size()
     classes = len(data)
     """
@@ -73,26 +111,21 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
     """
     Training
     """
-    # refine callbacks
-    early_stopping = EarlyStopping(
-        monitor="valid_loss",
-        mode="min",
-        patience=10,
-    )
-    logger = TensorBoardLogger("tb_logs", name="my_model")
     ### Train ###
-    trainer = pl.Trainer(
-        max_epochs=minepoch,
-        accelerator="gpu",
-        devices=torch.cuda.device_count(),
-        logger=logger
-        #callbacks=[early_stopping],
-        #callbacks=[Garbage_collector_callback()],
-        #callbacks=[model_checkpoint],
-    )
-    trainer.fit(model,datamodule=data_module)
-    trainer.test(model,datamodule=data_module)
-    #model = EffNetV2.load_from_checkpoint("model_log/Effnet-c2-BC/checkpoints/epoch=19-step=6400.ckpt")
+    if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # network, loss functions and optimizer
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learningrate)
+
+    print("Train Start...")
+    for epoch in range(minepoch):
+        train_loop(model, device, train_loader, criterion,optimizer,epoch)
+
+    # testing with validation data
+    # print("Test Start...")
+    # f1 = test_loop(model, device, test_loader,criterion,target_class)
 
 
 if __name__ == '__main__':

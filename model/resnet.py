@@ -55,8 +55,7 @@ class Bottleneck(nn.Module):
 		return out
 
 
-class ResNet(MyProcess):
-#class ResNet(nn.Module):
+class ResNet(nn.Module):
     def __init__(self, cfgs,cnnparam,mode, preference):
         super(ResNet, self).__init__()
 

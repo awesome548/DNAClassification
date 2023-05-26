@@ -2,23 +2,25 @@ import torch
 from torch import nn
 import os
 import click
-import time
+import datetime
 import math
 import numpy as np
 from dotenv import load_dotenv
 import pytorch_lightning as pl
 from model import effnetv2,EffNetV2
+from ops_process import evaluation
 from ops_data.dataformat import Dataformat
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,model_parameter,logger_preference
+from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
+import tqdm
 
 
 ### TRAIN and TEST ###
 def train_loop(model, device, train_loader, criterion,optimizer,epoch) -> None:
     model.train()
     train_loss = 0
-    log_interval = 90 # total 185だった
-    for batch,(data, target) in enumerate(train_loader):
+    for data, target in tqdm.tqdm(train_loader,leave=False):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
@@ -27,28 +29,31 @@ def train_loop(model, device, train_loader, criterion,optimizer,epoch) -> None:
         optimizer.step()
         train_loss += loss.item()
 
-        if batch % log_interval == 0 and batch > 0:
-            cur_loss = train_loss / log_interval
-            print('| epoch {:3d} | {:5d}/{:5d} batches | loss {:5.2f} | ppl {:8.2f}'.format(
-                        epoch, batch, len(train_loader) ,cur_loss, math.exp(cur_loss)))
-            train_loss = 0
+    cur_loss = train_loss / len(train_loader)
+    print('| epoch {:3d} | loss {:5.2f} | ppl {:8.2f}'.format(epoch,cur_loss, math.exp(cur_loss)))
+    train_loss = 0
 
-def test_loop(model, device, test_loader,criterion,target_class,run):
+def test_loop(model, device, test_loader,criterion,n_class,t_class,heatmap):
     model.eval()
     with torch.no_grad():
-        target = np.array(())
-        output = np.array(())
+        labels = torch.zeros(1)
+        outputs = torch.zeros(1,n_class)
         for x, y in test_loader:
             x, y = x.to(device), y.to(device)
-            y_hat = model(x)
+            y_hat = model(x,text="test")
             loss = criterion(y_hat,y)
-            target.append(y.cpu().detach().numpy().copy())
-            output.append(y_hat.cpu().detach().numpy().copy())
+            labels = torch.hstack((labels,y.clone().detach().cpu()))
+            outputs = torch.vstack((outputs,y_hat.clone().detach().cpu()))
 
-        y_hat_idx = output.max(dim=1).indices
-        y_hat_idx = (y_hat_idx == target_class)
-        y = (target == target_class)
+    outputs = outputs[1:,]
+    labels = labels[1:]
+    hidd_vec = model.cluster[1:]
+    pref = model.pref
+    y_hat_idx = outputs.max(dim=1).indices
+    y_hat_idx = (y_hat_idx == t_class)
+    y = (labels == t_class)
 
+    evaluation(y_hat_idx,y_hat,y,n_class,t_class,hidd_vec,labels,pref)
 
 @click.command()
 @click.option('--arch', '-a', help='Name of Architecture')
@@ -56,13 +61,14 @@ def test_loop(model, device, test_loader,criterion,target_class,run):
 @click.option('--minepoch', '-me', default=10, help='Number of min epoches')
 @click.option('--learningrate', '-lr', default=1e-2, help='Learning rate')
 @click.option('--hidden', '-hidden', default=64, help='dim of hidden layer')
-@click.option('--target_class', '-t_class', default=0, help='Target class index')
+@click.option('--t_class', '-t', default=0, help='Target class index')
 @click.option('--mode', '-m', default=0, help='0 : normal, 1: best')
 
-def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
+def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     load_dotenv()
     IDLIST = os.environ['IDLIST']
     FAST5 = os.environ['FAST5']
+    MODEL = os.environ['MODEL']
     cutoff = int(os.environ['CUTOFF'])
     maxlen = int(os.environ['MAXLEN'])
     cutlen = int(os.environ['CUTLEN'])
@@ -97,6 +103,7 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
     """
     project_name = "Master_init"
     heatmap = True
+    train = False
     cfgs =[
         # t, c, n, s, SE
         [1,  24,  2, 1, 0],
@@ -107,7 +114,7 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
         [6, 256,  6, 2, 1],
     ]
     # Model 設定
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,target_class,minepoch,heatmap,project_name,mode=mode)
+    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,t_class,minepoch,heatmap,project_name,mode=mode)
     """
     Training
     """
@@ -119,13 +126,18 @@ def main(arch, batch, minepoch, learningrate,hidden,target_class,mode):
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningrate)
 
-    print("Train Start...")
-    for epoch in range(minepoch):
-        train_loop(model, device, train_loader, criterion,optimizer,epoch)
+    if train:
+        print("#######Train Start...")
+        for epoch in (range(minepoch)):
+            train_loop(model, device, train_loader, criterion,optimizer,epoch)
+        torch.save(model, f'{MODEL}/{arch}-{datetime.date.today()}.pth')
+    else:
+        model = torch.load(f'{MODEL}/{arch}-{datetime.date.today()}.pth')
 
+    model.eval()
     # testing with validation data
-    # print("Test Start...")
-    # f1 = test_loop(model, device, test_loader,criterion,target_class)
+    print("#######Test Start...")
+    test_loop(model, device, test_loader,criterion,classes,t_class,heatmap)
 
 
 if __name__ == '__main__':

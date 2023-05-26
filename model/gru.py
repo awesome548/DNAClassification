@@ -47,9 +47,7 @@ class myGRU(nn.Module):
         self.fc = nn.Linear(hiddenDim, classes)
 
         # output channel variable
-        self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,hiddenDim).cuda()
-        self.save_hyperparameters()
 
     def forward(self,x,hidden0=None,text=None):
         x = self.conv(x.unsqueeze(1))

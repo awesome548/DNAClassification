@@ -76,7 +76,6 @@ class ResNet(nn.Module):
             'fn' : 0,
             'tn' : 0,
         }
-        self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,output_channel).cuda()
         ######
 

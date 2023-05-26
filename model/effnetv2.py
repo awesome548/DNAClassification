@@ -159,10 +159,8 @@ class EffNetV2(MyProcess):
         self.classifier = nn.Linear(output_channel, classes)
         
         # ouput channel variable
-        self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,output_channel).cuda()
         
-        self.save_hyperparameters()
         self._initialize_weights()
 
     def forward(self, x,text="train"):

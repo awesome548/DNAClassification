@@ -64,7 +64,7 @@ class Preprocess():
             self.idpath = id 
             self.fast5path = fast5
             self.outpath = DATA +'/'+ os.path.basename(self.idpath.replace('.txt','.pt'))
-            print('##############')
+            print('#######')
             print(f'input id path : {id}')
             print(f'num of fast5-id : {len(self.li)}')
         else:

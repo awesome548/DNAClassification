@@ -59,7 +59,7 @@ def base_labels(data):
       label_list = torch.zeros(1)
       for i in range(0,len(data)):
             label_list = torch.hstack((label_list,torch.ones(data[i].shape[0])*i))
-      return label_list[1:]
+      return label_list[1:].to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,num_classes:int):

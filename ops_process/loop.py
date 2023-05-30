@@ -12,7 +12,7 @@ FAST5 = os.environ['FAST5']
 MODEL = os.environ['MODEL']
 
 ### TRAIN and TEST ###
-def train_loop(model, device, train_loader, criterion,optimizer,minepoch,load_model,arch) -> None:
+def train_loop(model, device, train_loader, criterion,optimizer,minepoch,load_model,arch,writer) -> None:
     if not load_model:
         print("#######Train Start...")
         print(f'Epoch :{minepoch}, Train Data Size :{train_loader.dataset.data.shape}')
@@ -29,13 +29,14 @@ def train_loop(model, device, train_loader, criterion,optimizer,minepoch,load_mo
                 train_loss += loss.item()
 
             cur_loss = train_loss / len(train_loader)
+            writer.add_scalar("Loss/train", cur_loss, epoch)
             print('| epoch {:3d} | loss {:5.2f} | ppl {:8.2f}'.format(epoch,cur_loss, math.exp(cur_loss)))
             train_loss = 0
         torch.save(model, f'{MODEL}/{arch}-{datetime.date.today()}.pth')
     else:
         model = torch.load(f'{MODEL}/{arch}-{datetime.date.today()}.pth')
 
-def test_loop(model, device, test_loader,criterion,n_class,t_class,load_model):
+def test_loop(model, device, test_loader,criterion,n_class,t_class,load_model,writer):
     # testing with validation data
     print("#######Test Start...")
     print(f'Test Data Size :{test_loader.dataset.data.shape}')
@@ -55,7 +56,7 @@ def test_loop(model, device, test_loader,criterion,n_class,t_class,load_model):
     hidd_vec = model.cluster[1:]
     pref = model.pref
     y_hat_idx = outputs.max(dim=1).indices
-    y_hat_idx = (y_hat_idx == t_class)
-    y = (labels == t_class)
+    # y_hat_idx = (y_hat_idx == t_class)
+    # y = (labels == t_class)
 
-    evaluation(y_hat_idx,y_hat,y,n_class,t_class,hidd_vec,labels,pref,load_model)
+    evaluation(y_hat_idx,outputs,labels,n_class,t_class,hidd_vec,labels,pref,load_model,writer)

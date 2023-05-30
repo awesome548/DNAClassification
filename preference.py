@@ -51,17 +51,7 @@ def model_parameter(flag,hidden):
     return model_params
 
 
-def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatmap,project,mode=0,cnn_params=None,cfgs=None):
-    pref = {
-        "lr" : learningrate,
-        "cutlen" : cutlen,
-        "classes" : classes,
-        "epoch" : epoch,
-        "target" : target,
-        "name" : arch,
-        "heatmap" : heatmap,
-        "project" : project,
-    }
+def model_preference(arch,hidden,pref,mode=0,cnn_params=None,cfgs=None):
     ### no CNN PARAM -> best CNN
     if "GRU" in str(arch):
         params = model_parameter(0,hidden)
@@ -81,15 +71,15 @@ def model_preference(arch,hidden,classes,cutlen,learningrate,target,epoch,heatma
     useModel = arch
     return model,useModel
 
-def logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch,target):
-    return WandbLogger(
-        project=project_name,
-        config={
-            "dataset_size" : dataset_size,
-            "model" : useModel,
-            "cutlen" : cutlen,
-            "target" : target,
-            "epoch" : minepoch
-        },
-        name=useModel+"_"+str(classes)+"_"+str(cutlen)+"_e_"+str(minepoch)+"_"+str(target)
-    )
+# def logger_preference(project_name,classes,dataset_size,useModel,cutlen,minepoch,target):
+#     return WandbLogger(
+#         project=project_name,
+#         config={
+#             "dataset_size" : dataset_size,
+#             "model" : useModel,
+#             "cutlen" : cutlen,
+#             "target" : target,
+#             "epoch" : minepoch
+#         },
+#         name=useModel+"_"+str(classes)+"_"+str(cutlen)+"_e_"+str(minepoch)+"_"+str(target)
+#     )

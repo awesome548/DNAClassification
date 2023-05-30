@@ -12,8 +12,8 @@ Bthesis_log/
 Confusion_matrix/
 misc/
 torch_data/
-lightning_logs/
 tb_logs/
+runs/
 
 #Wandb model
 test/

@@ -1,4 +1,5 @@
 import torch
+import pprint
 from torch import nn
 import os
 import click
@@ -8,11 +9,10 @@ import pytorch_lightning as pl
 from model import effnetv2,EffNetV2
 from ops_data.dataformat import Dataformat
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from preference import model_preference,model_parameter,logger_preference
+from preference import model_preference,model_parameter
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
 from ops_process import train_loop,test_loop
-
-
+from torch.utils.tensorboard import SummaryWriter
 
 @click.command()
 @click.option('--arch', '-a', help='Name of Architecture')
@@ -32,6 +32,7 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     maxlen = int(os.environ['MAXLEN'])
     cutlen = int(os.environ['CUTLEN'])
     dataset_size = int(os.environ['DATASETSIZE'])
+    writer = SummaryWriter('runs/experiment_1')
 
     ## 結果を同じにする
     #torch.manual_seed(1)
@@ -49,14 +50,14 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
         'maxlen' : maxlen,
         'stride' : cutlen
     }
-    print(f'dataset size : {dataset_size}')
-    print(f'Cutlen : {cut_size}')
+    pprint.pprint(cut_size,width=1)
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
     data = Dataformat(IDLIST,FAST5,dataset_size,cut_size)
     train_loader,val_dataloader,test_loader = data.loader(batch)
     dataset_size = data.size()
     classes = len(data)
+    print(f'Num of Classes :{classes}')
     """
     Preference
     """
@@ -64,7 +65,18 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     heatmap = True
     load_model = False
     # Model 設定
-    model,useModel = model_preference(arch,hidden,classes,cutlen,learningrate,t_class,minepoch,heatmap,project_name,mode=mode)
+    pref = {
+        "lr" : learningrate,
+        "cutlen" : cutlen,
+        "classes" : classes,
+        "epoch" : minepoch,
+        "target" : t_class,
+        "name" : arch,
+        "heatmap" : heatmap,
+        "project" : project_name,
+    }
+    pprint.pprint(pref,width=1)
+    model,useModel = model_preference(arch,hidden,pref,mode=mode)
     """
     Training
     """
@@ -76,8 +88,8 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learningrate)
     
-    train_loop(model,device,train_loader,criterion,optimizer,minepoch,load_model,arch)
-    test_loop(model, device, test_loader,criterion,classes,t_class,load_model)
+    train_loop(model,device,train_loader,criterion,optimizer,minepoch,load_model,arch,writer)
+    test_loop(model, device, test_loader,criterion,classes,t_class,load_model,writer)
 
 
 if __name__ == '__main__':

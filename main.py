@@ -22,28 +22,24 @@ from torch.utils.tensorboard import SummaryWriter
 @click.option('--hidden', '-hidden', default=64, help='dim of hidden layer')
 @click.option('--t_class', '-t', default=0, help='Target class index')
 @click.option('--mode', '-m', default=0, help='0 : normal, 1: best')
+@click.option('--classification', '-c', default="base", help='base, genus, family')
 
-def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
+def main(arch, batch, minepoch, learningrate,hidden,t_class,mode,classification):
     load_dotenv()
     IDLIST = os.environ['IDLIST']
     FAST5 = os.environ['FAST5']
-    MODEL = os.environ['MODEL']
     cutoff = int(os.environ['CUTOFF'])
     maxlen = int(os.environ['MAXLEN'])
     cutlen = int(os.environ['CUTLEN'])
     dataset_size = int(os.environ['DATASETSIZE'])
     writer = SummaryWriter('runs/experiment_1')
+    load_model = False
 
-    ## 結果を同じにする
-    #torch.manual_seed(1)
-    #torch.cuda.manual_seed(1)
-    #torch.cuda.manual_seed_all(1)
-    #torch.backends.cudnn.deterministic = True
-    #torch.set_deterministic_debug_mode(True)
     """
     Dataset preparation
     """
     ### Dataset  設定
+    # 変更不可 .values()の取り出しあり
     cut_size = {
         'cutoff' : cutoff,
         'cutlen' : cutlen,
@@ -53,18 +49,18 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     pprint.pprint(cut_size,width=1)
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
-    data = Dataformat(IDLIST,FAST5,dataset_size,cut_size)
-    train_loader,val_dataloader,test_loader = data.loader(batch)
+    data = Dataformat(IDLIST,FAST5,dataset_size,cut_size,classification)
+    train_loader,_, = data.loader(batch)
+    test_loader = data.test_loader(batch)
     dataset_size = data.size()
+    # Dataformatクラスで設定してあるクラス数が取り出せる
     classes = len(data)
     print(f'Num of Classes :{classes}')
     """
     Preference
     """
-    project_name = "Master_init"
-    heatmap = True
-    load_model = False
     # Model 設定
+    # 変更不可 .values()の取り出しあり
     pref = {
         "lr" : learningrate,
         "cutlen" : cutlen,
@@ -72,8 +68,8 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
         "epoch" : minepoch,
         "target" : t_class,
         "name" : arch,
-        "heatmap" : heatmap,
-        "project" : project_name,
+        "heatmap" : True,
+        "project" :  "Master_init",
     }
     pprint.pprint(pref,width=1)
     model,useModel = model_preference(arch,hidden,pref,mode=mode)
@@ -84,12 +80,15 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode):
     if torch.cuda.is_available:device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # network, loss functions and optimizer
-    model = model.to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learningrate)
-    
-    train_loop(model,device,train_loader,criterion,optimizer,minepoch,load_model,arch,writer)
-    test_loop(model, device, test_loader,criterion,classes,t_class,load_model,writer)
+    # 変更不可 .values()の取り出しあり
+    models = {
+        "model" : model.to(device),
+        "criterion" : nn.CrossEntropyLoss().to(device),
+        "optimizer" : torch.optim.Adam(model.parameters(), lr=learningrate),
+        "device" : device,
+    }
+    train_loop(models,pref,train_loader,load_model,writer)
+    test_loop(models,pref, test_loader,load_model,writer)
 
 
 if __name__ == '__main__':

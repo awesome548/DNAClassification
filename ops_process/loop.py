@@ -12,11 +12,16 @@ FAST5 = os.environ['FAST5']
 MODEL = os.environ['MODEL']
 
 ### TRAIN and TEST ###
-def train_loop(model, device, train_loader, criterion,optimizer,minepoch,load_model,arch,writer) -> None:
+def train_loop(models,pref,train_loader,load_model,writer) -> None:
+    epoch = pref["epoch"]
+    arch = pref["name"]
+    cls = pref["classes"]
+    model,criterion,optimizer,device = models.values()
+
     if not load_model:
         print("#######Train Start...")
-        print(f'Epoch :{minepoch}, Train Data Size :{train_loader.dataset.data.shape}')
-        for epoch in (range(minepoch)):
+        print(f'Epoch :{epoch}, Train Data Size :{train_loader.dataset.data.shape}')
+        for epo in (range(epoch)):
             model.train()
             train_loss = 0
             for data, target in tqdm.tqdm(train_loader,leave=False):
@@ -29,14 +34,17 @@ def train_loop(model, device, train_loader, criterion,optimizer,minepoch,load_mo
                 train_loss += loss.item()
 
             cur_loss = train_loss / len(train_loader)
-            writer.add_scalar("Loss/train", cur_loss, epoch)
-            print('| epoch {:3d} | loss {:5.2f} | ppl {:8.2f}'.format(epoch,cur_loss, math.exp(cur_loss)))
+            writer.add_scalar("Loss/train", cur_loss, epo)
+            print('| epoch {:3d} | loss {:5.2f} | ppl {:8.2f}'.format(epo,cur_loss, math.exp(cur_loss)))
             train_loss = 0
-        torch.save(model, f'{MODEL}/{arch}-{datetime.date.today()}.pth')
+        torch.save(model, f'{MODEL}/{arch}-c{cls}-{datetime.date.today()}.pth')
     else:
-        model = torch.load(f'{MODEL}/{arch}-{datetime.date.today()}.pth')
+        model = torch.load(f'{MODEL}/{arch}-c{cls}-{datetime.date.today()}.pth')
 
-def test_loop(model, device, test_loader,criterion,n_class,t_class,load_model,writer):
+def test_loop(models,pref,test_loader,load_model,writer):
+    model, criterion, _, device = models.values()
+    n_class = pref["classes"]
+    t_class = pref["target"]
     # testing with validation data
     print("#######Test Start...")
     print(f'Test Data Size :{test_loader.dataset.data.shape}')

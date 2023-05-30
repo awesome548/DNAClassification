@@ -37,14 +37,13 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
             
            
     _,cutlen,n_class,epoch,target,name,heatmap,project = pref.values()
-    confmat = MulticlassConfusionMatrix(num_classes=n_class)
-    print(torch.sum(y[y==4]))
-    confmat = confmat(y_hat_idx, y)
-    confmat = confmat.cpu().detach().numpy().copy()
-    print(confmat)
+    confmat_norm = MulticlassConfusionMatrix(num_classes=n_class,normalize='true')
+    matrix = confmat_norm(y_hat_idx, y)
+    matrix = matrix.cpu().detach().numpy().copy()
+    print(matrix)
     os.makedirs(f"{CONFMAT}/{project}",exist_ok=True)
     plt.figure()
-    s = sns.heatmap(confmat,annot=True,cmap="Reds",fmt="d")
+    s = sns.heatmap(matrix,annot=True,cmap="Reds",fmt=".2f")
     s.set(xlabel="predicted",ylabel="label")
     plt.savefig(f"{CONFMAT}/{project}/{datetime.date.today()}{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
 

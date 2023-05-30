@@ -7,10 +7,11 @@ from sklearn.cluster import KMeans
 import datetime
 from dotenv import load_dotenv
 
-def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref):
-    load_dotenv()
-    CONFMAT = os.environ['CONFMAT']
-    HEATMAP = os.environ['HEATMAP']
+load_dotenv()
+CONFMAT = os.environ['CONFMAT']
+HEATMAP = os.environ['HEATMAP']
+
+def evaluation(y_hat_idx,y,n_class,target,hidd_vec,labels,pref,load_model):
     acc = Accuracy(task="multiclass",num_classes=n_class)
     acc1 = Accuracy(task="multiclass",num_classes=n_class,average=None)
     preci = Precision(task="multiclass",num_classes=n_class)
@@ -43,7 +44,8 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref):
 
 
     ### K-Means ###
-    if heatmap:
+    if heatmap and (not load_model):
+        print("saving heatmap...")
         X = hidd_vec.cpu().detach().numpy().copy()
         heat_map = torch.zeros(n_class,n_class)
 
@@ -69,4 +71,7 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref):
         s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g")
         s.set(xlabel="label",ylabel="cluster")
         plt.savefig(f"{HEATMAP}/{project}/{datetime.date.today()}{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
+        print("heatmap saved...")
         ### SAVE FIG ###
+    else:
+        print("heatmap will not be saved")

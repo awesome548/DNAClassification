@@ -56,23 +56,16 @@ def base_data(data):
       return torch.cat(data)
 
 def base_labels(data):
-      label_list = []
+      label_list = torch.zeros(1)
       for i in range(0,len(data)):
-            label_list.append(torch.ones(data[i].shape[0])*i)
-      return (torch.cat(label_list,dim=0)).to(torch.int64)
+            label_list = torch.hstack((label_list,torch.ones(data[i].shape[0])*i))
+      return label_list[1:]
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,num_classes:int):
             if num_classes == 2:
-                  #self.data = in_category_data_2(*data)
-                  #self.label = in_category_label_2(*data)
                   self.data = in_category_data(*data)
                   self.label = in_category_label(*data)
-            #if num_classes == 2:
-                  #self.data = mix_category_data(*data)
-                  #self.label = mix_category_label(*data)
-                  #print(self.data.shape)
-                  #print(self.label.shape)
             elif num_classes == 5:
                   self.data = category_data(*data)
                   self.label = category_label(*data)

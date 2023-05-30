@@ -7,6 +7,15 @@ DEFAULT_CNN = {
     "stride" : 3,
     "padd" : 5,
 }
+cfgs =[
+    # t, c, n, s, SE
+    [1,  24,  2, 1, 0],
+    [4,  48,  4, 2, 0],
+    [4,  64,  4, 2, 0],
+    [4, 128,  6, 2, 1],
+    [6, 160,  6, 1, 1],
+    [6, 256,  6, 2, 1],
+]
 def model_parameter(flag,hidden):
     if flag == 0:
         ##LSTM

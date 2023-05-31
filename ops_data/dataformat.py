@@ -33,7 +33,7 @@ def base_class(ids: list,fast5s:list,dataset_size:int,cut_size:dict) -> dict:
     return train,val,test,dataset_size
 
 class Dataformat:
-    def __init__(self,ids_dir: list,fast5_dir:list,dataset_size:int,cut_size:dict) -> None:
+    def __init__(self,ids_dir: list,fast5_dir:list,dataset_size:int,cut_size:dict,type:str) -> None:
         fast5_set = []
         id_set = []
         if os.path.exists(fast5_dir):
@@ -44,18 +44,21 @@ class Dataformat:
                     id_set.append(ids_dir + f'/{os.path.basename(name)}.txt')
         else:
             raise FileNotFoundError("ディレクトリがありません")
-        num_class = len(id_set)
 
+        #ファイルの順番がわからなくなるためソート
         fast5_set.sort()
         id_set.sort()
         train, val, test, dataset_size = base_class(id_set,fast5_set,dataset_size,cut_size)
 
-        self.training_set = MultiDataset(train,num_class)
-        self.validation_set = MultiDataset(val,num_class)
-        self.test_set = MultiDataset(test,num_class)
-        self.classes = num_class
+        #カテゴリの数がDatasetのclass属性に保存してある
+        self.training_set = MultiDataset(train,type)
+        self.validation_set = MultiDataset(val,type)
+        self.test_set = MultiDataset(test,type)
+        self.classes = self.training_set.classes
 
+        ### DATASET SIZE VALIDATON 
         val_datsize = len(self.training_set)+len(self.validation_set)+len(self.test_set)
+        num_class = len(id_set)
         tmp_size = dataset_size *num_class
         assert val_datsize == tmp_size
 
@@ -69,7 +72,7 @@ class Dataformat:
         params = {'batch_size': batch,
 				'shuffle': True,
 				'num_workers': 24}
-        return DataLoader(self.training_set,**params),DataLoader(self.validation_set,**params),DataLoader(self.test_set,**params)
+        return DataLoader(self.training_set,**params),DataLoader(self.validation_set,**params)
     
     def test_loader(self,batch):
         params = {'batch_size': batch,

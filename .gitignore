@@ -18,6 +18,8 @@ runs/
 #Wandb model
 test/
 test.py
+test.txt
+test*
 venv/
 Baseline*/
 Category*/

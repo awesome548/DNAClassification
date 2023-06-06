@@ -37,6 +37,7 @@ def manipulate(x,cutlen,maxlen,size,stride):
     print(f'shaped torch size : {data.shape}')
     return data
     """
+    データ正規化確認
     print(torch.max(data))
     print(torch.min(data))
     data = data.cpu().detach().numpy().copy()
@@ -52,40 +53,25 @@ def calu_size(cutlen,maxlen,stride):
 
 class Preprocess():
 	### read in pos and neg ground truth variables
-    def __init__(self,id,fast5) -> None:
+    def __init__(self,fast5,out,flag) -> None:
         load_dotenv()
         DATA = os.environ['DATA']
-        if os.path.exists(id) and os.path.exists(fast5):
-            my_file = open(id, "r")
-            # id を読み込む
-            li = my_file.readlines()
-            my_file.close()
-            self.li = [pi.split('\n')[0] for pi in li]
-            self.idpath = id 
-            self.fast5path = fast5
-            self.outpath = DATA +'/'+ os.path.basename(self.idpath.replace('.txt','.pt'))
-            print('#######')
-            print(f'input id path : {id}')
-            print(f'num of fast5-id : {len(self.li)}')
-        else:
-            raise FileNotFoundError
-        pass
-
-    def __len__(self) -> int:
-        return len(self.li)
+        self.fast5path = fast5
+        self.outpath = DATA +'/'+ out
+        if flag:
+            if not os.path.exists(fast5):
+                raise FileNotFoundError
 	
     def process(self,cutoff,cutlen,maxlen,req_size,stride):
-        output_path = self.outpath
         f5_path = self.fast5path
         file_exist = False
-        count = 0
         print(f5_path+" processing...")
-        if (os.path.isfile(output_path)):
-            x = torch.load(output_path)
-            count = x.shape[0]
-            print(f'processed num of fast5 : {count}')
+        files = (glob.glob(self.outpath+'*'))
+        if files:
+            random.shuffle(files)
+            x = torch.load(files[0])
+            print(f'processed num of fast5 : {x.shape[0]}')
             file_exist = True
-
         else:
             arrpos = []
             for fileNM in glob.glob(f5_path + '/*.fast5'):
@@ -98,7 +84,7 @@ class Preprocess():
         if file_exist:
             pass
         elif len(arrpos) >= req_size:
-            x = mad_normalization(np.array(arrpos),output_path,maxlen) 
+            x = mad_normalization(np.array(arrpos),self.outpath,maxlen) 
         else:
             raise IndexError('dataset size is larger than num of fast5 having enough length')
         

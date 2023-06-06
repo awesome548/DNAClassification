@@ -1,7 +1,6 @@
 import torch
 from torch import nn
 
-from ops_process import MyProcess
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
@@ -77,7 +76,7 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
-class ViT2(MyProcess):
+class ViT2(nn.Module):
     def __init__(self, length,classes, depth, heads,lr, mlp_dim=1024, pool = 'cls', dim_head = 64, dropout = 0.1, emb_dropout = 0.1):
         super().__init__()
         self.loss_fn = nn.CrossEntropyLoss()

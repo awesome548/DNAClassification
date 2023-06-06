@@ -1,6 +1,7 @@
 __pycache__/
 .vscode
 .env
+myenv/
 
 #general directory
 logs/
@@ -20,7 +21,6 @@ test/
 test.py
 test.txt
 test*
-venv/
 Baseline*/
 Category*/
 IPSJ/

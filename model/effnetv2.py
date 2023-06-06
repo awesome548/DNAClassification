@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import math
-from ops_process import MyProcess
 
 #__all__ = ['effnetv2_s', 'effnetv2_m', 'effnetv2_l', 'effnetv2_xl']
 
@@ -113,7 +112,7 @@ class MBConv(nn.Module):
             return self.conv(x)
 
 
-class EffNetV2(MyProcess):
+class EffNetV2(nn.Module):
     def __init__(self, cfgs,convpram,preference, width_mult=1.):
         super(EffNetV2, self).__init__()
 

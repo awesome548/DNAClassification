@@ -5,10 +5,8 @@ import os
 import click
 import numpy as np
 from dotenv import load_dotenv
-import pytorch_lightning as pl
 from model import effnetv2,EffNetV2
 from ops_data.dataformat import Dataformat
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,model_parameter
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
 from ops_process import train_loop,test_loop
@@ -49,7 +47,7 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode,classification)
     pprint.pprint(cut_size,width=1)
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
-    data = Dataformat(IDLIST,FAST5,dataset_size,cut_size,classification)
+    data = Dataformat(FAST5,dataset_size,cut_size,classification)
     train_loader,_, = data.loader(batch)
     test_loader = data.test_loader(batch)
     dataset_size = data.size()

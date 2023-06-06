@@ -6,15 +6,12 @@ from ops_data.dataset import MultiDataset
 from ops_data.datamodule import DataModule
 from ops_data.preprocess import Preprocess,calu_size
 
-def base_class(ids: list,fast5s:list,dataset_size:int,cut_size:dict) -> dict:
+def base_class(fast5_id:list,dataset_size:int,cut_size:dict) -> dict:
     cutoff,cutlen,maxlen,stride = cut_size.values()
     data_list = []
-    for id, fast5 in zip(ids,fast5s):
-        pre = Preprocess(id,fast5)
-        if len(pre) >= dataset_size:
-            data_list.append(pre.process(**cut_size,req_size=dataset_size))
-        else:
-            raise IndexError('dataset size is larger than actual num of fast5')
+    for [fast5, out, flag] in fast5_id:
+        pre = Preprocess(fast5,out,flag)
+        data_list.append(pre.process(**cut_size,req_size=dataset_size))
     manipulate_ratio = calu_size(cutlen,maxlen,stride)
     dataset_size = manipulate_ratio*dataset_size
 
@@ -33,32 +30,45 @@ def base_class(ids: list,fast5s:list,dataset_size:int,cut_size:dict) -> dict:
     return train,val,test,dataset_size
 
 class Dataformat:
-    def __init__(self,ids_dir: list,fast5_dir:list,dataset_size:int,cut_size:dict,type:str) -> None:
+    def __init__(self,fast5_dir:list,dataset_size:int,cut_size:dict,classfi_type:str) -> None:
         fast5_set = []
-        id_set = []
+        """
+        fast5_set : [fast5 dir path, species name , torch data exist flag]
+        """
+        #種はターゲットディレクトリに種の名前のフォルダとfast5フォルダを作る
         if os.path.exists(fast5_dir):
             for name in glob.glob(fast5_dir+'/*'):
+                tmp = []
+                flag = False
                 dirname = os.path.abspath(name) + '/fast5'
+                #IDを作って読み込んでいる場合
                 if os.path.exists(dirname):
-                    fast5_set.append(dirname)
-                    id_set.append(ids_dir + f'/{os.path.basename(name)}.txt')
+                    flag = True
+                    tmp.append(dirname)
+                #Torchファイルが直接存在する場合<-初回
+                else:
+                    tmp.append(name)
+                outpath = os.path.basename(name)
+                tmp.append(outpath)
+                tmp.append(flag)
+                fast5_set.append(tmp)
         else:
             raise FileNotFoundError("ディレクトリがありません")
 
         #ファイルの順番がわからなくなるためソート
         fast5_set.sort()
-        id_set.sort()
-        train, val, test, dataset_size = base_class(id_set,fast5_set,dataset_size,cut_size)
+        print(fast5_set)
+        train, val, test, dataset_size = base_class(fast5_set,dataset_size,cut_size)
 
         #カテゴリの数がDatasetのclass属性に保存してある
-        self.training_set = MultiDataset(train,type)
-        self.validation_set = MultiDataset(val,type)
-        self.test_set = MultiDataset(test,type)
+        self.training_set = MultiDataset(train,classfi_type)
+        self.validation_set = MultiDataset(val,classfi_type)
+        self.test_set = MultiDataset(test,classfi_type)
         self.classes = self.training_set.classes
 
         ### DATASET SIZE VALIDATON 
         val_datsize = len(self.training_set)+len(self.validation_set)+len(self.test_set)
-        num_class = len(id_set)
+        num_class = len(fast5_set)
         tmp_size = dataset_size *num_class
         assert val_datsize == tmp_size
 

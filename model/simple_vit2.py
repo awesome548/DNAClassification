@@ -3,7 +3,6 @@ from torch import nn
 import math
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from ops_process import MyProcess
 import numpy as np
 
 """
@@ -84,7 +83,7 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
-class SimpleViT2(MyProcess):
+class SimpleViT2(nn.Module):
     def __init__(self, classes, depth, heads, lr,mlp_dim=1024, dim_head = 64):
         super().__init__()
 

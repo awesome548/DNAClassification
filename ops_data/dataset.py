@@ -11,15 +11,14 @@ def family(a,b,c,d,e,f):
       f_lbl = torch.ones(f.shape[0])*2
       n_class = 3
       return n_class,(torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl),dim=0)).to(torch.int64)
-def genus(a,b,c,d,e,f):
-      a_lbl = torch.ones(a.shape[0])*0
-      b_lbl = torch.ones(b.shape[0])*1
-      c_lbl = torch.ones(c.shape[0])*2
-      d_lbl = torch.ones(d.shape[0])*3
-      e_lbl = torch.ones(e.shape[0])*3
-      f_lbl = torch.ones(f.shape[0])*4
-      n_class = 5
-      return n_class,(torch.cat((a_lbl,b_lbl,c_lbl,d_lbl,e_lbl,f_lbl),dim=0)).to(torch.int64)
+
+def genus(data):
+      label = [0,1,2,3,3,4]
+      label_list = torch.zeros(1)
+      for l,idx in enumerate(label,range(0,len(data))):
+            label_list = torch.hstack((label_list,torch.ones(data[idx].shape[0])*l))
+      n_class = max(label)+1
+      return n_class,label_list[1:].to(torch.int64)
 
 def base_data(data):
       return torch.cat(data)
@@ -28,17 +27,17 @@ def base_labels(data):
       label_list = torch.zeros(1)
       for i in range(0,len(data)):
             label_list = torch.hstack((label_list,torch.ones(data[i].shape[0])*i))
-      return label_list[1:].to(torch.int64)
+      return len(data),label_list[1:].to(torch.int64)
 
 class MultiDataset(torch.utils.data.Dataset):
       def __init__(self, data:list,mode:str):
             self.data = base_data(data)
             if mode == "genus":
-                  self.classes ,self.label = genus(*data)
+                  self.classes ,self.label = genus(data)
             elif mode == "family":
-                  self.classes ,self.label = family(*data)
+                  self.classes ,self.label = family(data)
             else:
-                  self.label = base_labels(data)
+                  self.classes ,self.label = base_labels(data)
 
       def __len__(self):
             return len(self.label)

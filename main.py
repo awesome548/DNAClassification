@@ -5,10 +5,8 @@ import os
 import click
 import numpy as np
 from dotenv import load_dotenv
-import pytorch_lightning as pl
 from model import effnetv2,EffNetV2
 from ops_data.dataformat import Dataformat
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from preference import model_preference,model_parameter
 from torchmetrics import Accuracy,Recall,Precision,F1Score,ConfusionMatrix,AUROC
 from ops_process import train_loop,test_loop
@@ -17,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 @click.command()
 @click.option('--arch', '-a', help='Name of Architecture')
 @click.option('--batch', '-b', default=1000, help='Batch size, default 1000')
-@click.option('--minepoch', '-me', default=10, help='Number of min epoches')
+@click.option('--minepoch', '-e', default=10, help='Number of min epoches')
 @click.option('--learningrate', '-lr', default=1e-2, help='Learning rate')
 @click.option('--hidden', '-hidden', default=64, help='dim of hidden layer')
 @click.option('--t_class', '-t', default=0, help='Target class index')
@@ -26,7 +24,6 @@ from torch.utils.tensorboard import SummaryWriter
 
 def main(arch, batch, minepoch, learningrate,hidden,t_class,mode,classification):
     load_dotenv()
-    IDLIST = os.environ['IDLIST']
     FAST5 = os.environ['FAST5']
     cutoff = int(os.environ['CUTOFF'])
     maxlen = int(os.environ['MAXLEN'])
@@ -49,19 +46,19 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode,classification)
     pprint.pprint(cut_size,width=1)
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
-    data = Dataformat(IDLIST,FAST5,dataset_size,cut_size,classification)
+    data = Dataformat(FAST5,dataset_size,cut_size,classification)
     train_loader,_, = data.loader(batch)
     test_loader = data.test_loader(batch)
-    dataset_size = data.size()
-    # Dataformatクラスで設定してあるクラス数が取り出せる
-    classes = len(data)
+    param = data.param()
+    datasize,classes,ylabel = param['size'],param['num_cls'],param['ylabel']
     print(f'Num of Classes :{classes}')
     """
     Preference
     """
     # Model 設定
-    # 変更不可 .values()の取り出しあり
+    # 変更不可 .values()の取り出しあり metrics.py
     pref = {
+        "data_size" : datasize,
         "lr" : learningrate,
         "cutlen" : cutlen,
         "classes" : classes,
@@ -69,6 +66,7 @@ def main(arch, batch, minepoch, learningrate,hidden,t_class,mode,classification)
         "target" : t_class,
         "name" : arch,
         "heatmap" : True,
+        "y_label" : ylabel,
         "project" :  "Master_init",
     }
     pprint.pprint(pref,width=1)

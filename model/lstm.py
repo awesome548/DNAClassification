@@ -1,9 +1,8 @@
 import torch.nn as nn
 import torch
-from ops_process import MyProcess 
 import numpy as np
 
-class LSTM(MyProcess):
+class LSTM(nn.Module):
     def __init__(self,hiddenDim,lr,classes,bidirect,target,cutlen,epoch,name):
         super(LSTM,self).__init__()
         self.lr = lr
@@ -48,7 +47,6 @@ class LSTM(MyProcess):
         }
         self.labels = torch.zeros(1).cuda()
         self.cluster = torch.zeros(1,hiddenDim).cuda()
-        self.save_hyperparameters()
 
     def forward(self,x,hidden0=None,text=None):
         x = x.unsqueeze(1)

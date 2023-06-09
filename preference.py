@@ -1,5 +1,4 @@
-from model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,myGRU,effnetv2_s,gru,cosformer
-from pytorch_lightning.loggers import WandbLogger
+from model import LSTM,resnet,effnetv2_s,gru,cosformer
 
 DEFAULT_CNN = {
     "channel" : 20,

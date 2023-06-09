@@ -1,8 +1,7 @@
-import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 
-class DataModule(pl.LightningDataModule):
+class DataModule():
     def __init__(self,train,val,test, batch_size: int):
         super().__init__()
         self.train_datasets = train

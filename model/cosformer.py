@@ -1,5 +1,4 @@
 from model import Kernel_transformer 
-from ops_process import MyProcess
 import torch
 import torch.nn as nn
 import numpy as np
@@ -10,7 +9,7 @@ cnnparam = {
     "stride" : 5,
     "padd" : 5,
 }
-class Transformer_clf_model(MyProcess):
+class Transformer_clf_model(nn.Module):
     def __init__(self, model_type, model_args,preference,cnn_params=cnnparam):
         super(Transformer_clf_model, self).__init__()
         ### PARAMS ###

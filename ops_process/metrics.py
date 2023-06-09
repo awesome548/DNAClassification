@@ -36,14 +36,15 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
     writer.add_scalar("Metric/precision_tar",preci1(y_hat_idx,y)[target])
             
            
-    _,cutlen,n_class,epoch,target,name,heatmap,project = pref.values()
+    _,_,cutlen,n_class,epoch,target,name,heatmap,ylabel,project = pref.values()
     confmat_norm = MulticlassConfusionMatrix(num_classes=n_class,normalize='true')
     matrix = confmat_norm(y_hat_idx, y)
     matrix = matrix.cpu().detach().numpy().copy()
     print(matrix)
     os.makedirs(f"{CONFMAT}/{project}",exist_ok=True)
     plt.figure()
-    s = sns.heatmap(matrix,annot=True,cmap="Reds",fmt=".2f")
+    sns.set(font_scale=0.5)
+    s = sns.heatmap(matrix,annot=True,cmap="Reds",fmt=".2f",yticklabels=ylabel,cbar=False)
     s.set(xlabel="predicted",ylabel="label")
     plt.savefig(f"{CONFMAT}/{project}/{datetime.date.today()}{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
 
@@ -72,7 +73,7 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
         os.makedirs(f"{HEATMAP}/{project}",exist_ok=True)
         ### SAVE FIG ###
         plt.figure()
-        s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g")
+        s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g",cbar=False,yticklabels=ylabel)
         s.set(xlabel="label",ylabel="cluster")
         plt.savefig(f"{HEATMAP}/{project}/{datetime.date.today()}{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
         print("heatmap saved...")

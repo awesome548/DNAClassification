@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 import math
-from ops_process import MyProcess
 from einops import rearrange,repeat
 from torchmetrics.functional.classification import multilabel_accuracy
 
@@ -86,7 +85,7 @@ class Transformer(nn.Module):
             x = ff(x) + x
         return x
 
-class SimpleViT(MyProcess):
+class SimpleViT(nn.Module):
     def __init__(self,classes,head_num,lr,block_num=6,dim_head=64,mlp_dim=2048):
         super(SimpleViT,self).__init__()
 

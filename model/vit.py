@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torch
 import math
-from ops_process import MyProcess
 from einops import repeat,rearrange
 
 """
@@ -116,7 +115,7 @@ class EncoderBlock(nn.Module):
         x = self.layer_norm_2(x)
         return x
 
-class ViT(MyProcess):
+class ViT(nn.Module):
     def __init__(self,classes,length,head_num,lr,block_num=6,dim_head=64,mlp_dim=2048):
         super(ViT,self).__init__()
 

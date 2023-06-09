@@ -68,6 +68,7 @@ class Preprocess():
         print(f5_path+" processing...")
         files = (glob.glob(self.outpath+'*'))
         if files:
+            #もしも同じファイルで再現性を持たせたほうがいい場合はコメントアウトする
             random.shuffle(files)
             x = torch.load(files[0])
             print(f'processed num of fast5 : {x.shape[0]}')

@@ -14,10 +14,13 @@ def base_labels(data,label):
 def classification(mode,length):
       if mode == "order":
             # return [0,1,2,3,3,4]
-            return [0,1,2,3,2,2,2,2,3,1,0,2]
+            return [0,1,2,3,2,2,2,3,1,0,2,1]
       elif mode == "family":
             # return [0,1,1,1,1,2]
-            return [0,1,2,3,2,2,2,4,5,6,7,8]
+            return [0,1,2,3,2,2,2,4,5,6,2,8]
+      elif mode == "class":
+            # return [0,1,1,1,1,2]
+            return [0,1,0,1,1,1,1,0,0,1,1,0]
       else:
             return [i for i in range(length)]
 

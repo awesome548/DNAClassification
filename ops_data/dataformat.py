@@ -17,7 +17,7 @@ def base_class(fast5_id:list,dataset_size:int,cut_size:dict) -> dict:
 
     assert data_list[0].shape[0] == dataset_size
     data_size = [int(dataset_size*0.8),int(dataset_size*0.1),int(dataset_size*0.1)]
-    
+
     train = []
     val = []
     test = []
@@ -26,7 +26,7 @@ def base_class(fast5_id:list,dataset_size:int,cut_size:dict) -> dict:
         train.append(tr)
         val.append(v)
         test.append(te)
-    
+
     return train,val,test,dataset_size
 
 class Dataformat:
@@ -37,7 +37,8 @@ class Dataformat:
         """
         #種はターゲットディレクトリに種の名前のフォルダとfast5フォルダを作る
         if os.path.exists(fast5_dir):
-            for name in glob.glob(fast5_dir+'/*'):
+            # Directory starting with A-Z -> loaded : with "_" -> not loaded
+            for name in glob.glob(fast5_dir+'/[A-Z]*'):
                 tmp = []
                 flag = False
                 dirname = os.path.abspath(name) + '/fast5'
@@ -48,8 +49,7 @@ class Dataformat:
                 #Torchファイルが直接存在する場合<-初回
                 else:
                     tmp.append(name)
-                outpath = os.path.basename(name)
-                tmp.append(outpath)
+                tmp.append(os.path.basename(name))
                 tmp.append(flag)
                 fast5_set.append(tmp)
         else:
@@ -57,16 +57,25 @@ class Dataformat:
 
         #ファイルの順番がわからなくなるためソート
         fast5_set.sort()
-        print(fast5_set)
+        # print(fast5_set)
         train, val, test, dataset_size = base_class(fast5_set,dataset_size,cut_size)
 
-        #カテゴリの数がDatasetのclass属性に保存してある
         self.training_set = MultiDataset(train,classfi_type)
         self.validation_set = MultiDataset(val,classfi_type)
         self.test_set = MultiDataset(test,classfi_type)
-        self.classes = self.training_set.classes
+        #カテゴリの数がDatasetのclass属性に保存してある
+        self.classes = MultiDataset.classes
+        #seabornに保存する用の変数 [*,*,*,*...]
+        captions = MultiDataset.captions
+        y_label = [None]*(self.classes)
+        for spe,cap in zip(fast5_set,captions):
+            if y_label[cap] == None:
+                y_label[cap] = spe[1]
+            else:
+                y_label[cap] += f'\n{spe[1]}'
+        self.ylabel = y_label
 
-        ### DATASET SIZE VALIDATON 
+        ### DATASET SIZE VALIDATON
         val_datsize = len(self.training_set)+len(self.validation_set)+len(self.test_set)
         num_class = len(fast5_set)
         tmp_size = dataset_size *num_class
@@ -83,17 +92,14 @@ class Dataformat:
 				'shuffle': True,
 				'num_workers': 24}
         return DataLoader(self.training_set,**params),DataLoader(self.validation_set,**params)
-    
+
     def test_loader(self,batch):
         params = {'batch_size': batch,
 				'shuffle': False,
 				'num_workers': 24}
         return DataLoader(self.test_set,**params)
 
-    def size(self) -> int:
-        return self.dataset
-
-    def __len__(self) -> int:
-        return self.classes
+    def param(self) -> int:
+        return {"size":self.dataset,"num_cls":self.classes,"ylabel":self.ylabel}
 
 

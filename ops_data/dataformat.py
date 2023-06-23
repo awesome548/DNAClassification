@@ -59,18 +59,18 @@ class Dataformat:
         """
         fast5_set : [fast5 dir path, species name , torch data exist flag]
         """
-        #種はターゲットディレクトリに種の名前のフォルダとfast5フォルダを作る
+        ## 種はターゲットディレクトリに種の名前のフォルダとfast5フォルダを作る
         if os.path.exists(fast5_dir):
             # Directory starting with A-Z -> loaded : with "_" -> not loaded
             for name in glob.glob(fast5_dir+'/[A-Z]*'):
                 tmp = []
                 flag = False
                 dirname = os.path.abspath(name) + '/fast5'
-                #IDを作って読み込んでいる場合
+                ## IDを作って読み込んでいる場合
                 if os.path.exists(dirname):
                     flag = True
                     tmp.append(dirname)
-                #Torchファイルが直接存在する場合<-初回
+                ## Torchファイルが直接存在する場合<-初回
                 else:
                     tmp.append(name)
                 tmp.append(os.path.basename(name))
@@ -79,7 +79,7 @@ class Dataformat:
         else:
             raise FileNotFoundError("ディレクトリがありません")
 
-        #ファイルの順番がわからなくなるためソート
+        ## ファイルの順番がわからなくなるためソート
         fast5_set.sort()
         # print(fast5_set)
 
@@ -93,9 +93,9 @@ class Dataformat:
         self.training_set = MultiDataset(train,classfi_type)
         self.validation_set = MultiDataset(val,classfi_type)
         self.test_set = MultiDataset(test,classfi_type)
-        #カテゴリの数がDatasetのclass属性に保存してある
+        ## カテゴリの数がDatasetのclass属性に保存してある
         self.classes = MultiDataset.classes
-        #seabornに保存する用の変数 [*,*,*,*...]
+        ## seabornに保存する用の変数 [*,*,*,*...]
         captions = MultiDataset.captions
         y_label = [None]*(self.classes)
         for spe,cap in zip(fast5_set,captions):

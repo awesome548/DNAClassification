@@ -36,9 +36,9 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
 
     """
     Dataset preparation
+    データセット設定
     """
-    # Dataset  設定
-    # 変更不可 .values()の取り出しあり
+    ## 変更不可 .values()の取り出しあり
     cut_size = {
         "cutoff": cutoff,
         "cutlen": cutlen,
@@ -46,8 +46,8 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
         "stride": stride,
     }
     pprint.pprint(cut_size, width=1)
-    # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
-    # id list -> 種の名前に対応した.txtが入ったディレクトリ
+    ## fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
+    ## id list -> 種の名前に対応した.txtが入ったディレクトリ
     data = Dataformat(FAST5, dataset_size, cut_size, classification,use_category=("Bacillus","Listeria"))
     train_loader, _ = data.loader(batch)
     test_loader = data.test_loader(batch)
@@ -56,9 +56,9 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
     print(f"Num of Classes :{classes}")
     """
     Preference
+    Model設定
     """
-    # Model 設定
-    # 変更不可 .values()の取り出しあり metrics.py
+    ## 変更不可 .values()の取り出しあり metrics.py
     pref = {
         "data_size": datasize,
         "lr": learningrate,
@@ -81,8 +81,8 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
     if torch.cuda.is_available:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # network, loss functions and optimizer
-    # 変更不可 .values()の取り出しあり
+    ### network, loss functions and optimizer
+    ## 変更不可 .values()の取り出しあり loop.py
     models = {
         "model": model.to(device),
         "criterion": nn.CrossEntropyLoss().to(device),

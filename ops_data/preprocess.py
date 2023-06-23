@@ -30,7 +30,7 @@ def mad_normalization(data_test,filepath,maxlen):
 def manipulate(x,cutlen,maxlen,size,stride):
     num = calu_size(cutlen,maxlen,stride)
     data = torch.zeros(size*num,cutlen)
-    ### start point is already cutoff point ###
+    ## start point is already cutoff point ###
     for index in range(num):
         start = stride*index
         data[index::num,:] = x[:size,start:start+cutlen]
@@ -52,7 +52,6 @@ def calu_size(cutlen,maxlen,stride):
 
 
 class Preprocess():
-	### read in pos and neg ground truth variables
     def __init__(self,fast5,out,flag) -> None:
         load_dotenv()
         DATA = os.environ['DATA']
@@ -68,7 +67,7 @@ class Preprocess():
         print(f5_path+" processing...")
         files = (glob.glob(self.outpath+'*'))
         if files:
-            #もしも同じファイルで再現性を持たせたほうがいい場合はコメントアウトする
+            ## もしも同じファイルで再現性を持たせたほうがいい場合はコメントアウトする
             random.shuffle(files)
             x = torch.load(files[0])
             i = 1

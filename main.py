@@ -48,7 +48,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
     pprint.pprint(cut_size, width=1)
     # fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     # id list -> 種の名前に対応した.txtが入ったディレクトリ
-    data = Dataformat(FAST5, dataset_size, cut_size, classification)
+    data = Dataformat(FAST5, dataset_size, cut_size, classification,use_category=("Bacillus","Listeria"))
     train_loader, _ = data.loader(batch)
     test_loader = data.test_loader(batch)
     param = data.param()
@@ -69,7 +69,8 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
         "name": arch,
         "heatmap": True,
         "y_label": ylabel,
-        "project": "Master_init",
+        "project": "gigascience",
+        "category" : classification,
     }
     pprint.pprint(pref, width=1)
     model, useModel = model_preference(arch, hidden, pref, mode=mode)

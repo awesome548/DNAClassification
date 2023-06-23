@@ -71,6 +71,11 @@ class Preprocess():
             #もしも同じファイルで再現性を持たせたほうがいい場合はコメントアウトする
             random.shuffle(files)
             x = torch.load(files[0])
+            i = 1
+            while(x.shape[0] < req_size):
+                y = torch.load(files[i])
+                x = torch.cat([x,y],dim=0)
+                i += 1
             print(f'processed num of fast5 : {x.shape[0]}')
             file_exist = True
         else:

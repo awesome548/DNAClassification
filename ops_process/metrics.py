@@ -46,7 +46,7 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
     sns.set(font_scale=0.5)
     s = sns.heatmap(matrix,annot=True,cmap="Reds",fmt=".2f",yticklabels=ylabel,cbar=False)
     s.set(xlabel="predicted",ylabel="label")
-    plt.savefig(f"{CONFMAT}/{project}/{datetime.date.today()}{name}-{category}-{str(cutlen)}-e{epoch}-c{n_class}.png")
+    plt.savefig(f"{CONFMAT}/{project}/{name}-{category}-{str(cutlen)}-e{epoch}-c{n_class}-{datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.png")
 
 
     ### K-Means ###
@@ -75,7 +75,7 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
         plt.figure()
         s = sns.heatmap(heatmap,vmin=0.0,vmax=1.0,annot=True,cmap="Reds",fmt=".3g",cbar=False,yticklabels=ylabel)
         s.set(xlabel="label",ylabel="cluster")
-        plt.savefig(f"{HEATMAP}/{project}/{datetime.date.today()}{name}-{str(cutlen)}-e{epoch}-c{n_class}.png")
+        plt.savefig(f"{HEATMAP}/{project}/{name}-{category}-{str(cutlen)}-e{epoch}-c{n_class}-{datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}.png")
         print("heatmap saved...")
         ### SAVE FIG ###
     else:

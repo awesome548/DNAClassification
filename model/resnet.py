@@ -95,8 +95,6 @@ class ResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
 
-        self.save_hyperparameters()
-
         """
         """
 

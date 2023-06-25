@@ -1,54 +1,42 @@
 import os
 import pprint
-
 import click
 import numpy as np
 import torch
 from dotenv import load_dotenv
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-
 from ops_data.dataformat import Dataformat
 from ops_process import test_loop
 from ops_process import train_loop
 from preference import model_preference
 
-
 @click.command()
 @click.option("--arch", "-a", help="Name of Architecture")
-@click.option("--batch", "-b", default=100, help="Batch size, default 1000")
+@click.option("--batch", "-b", default=500, help="Batch size, default 1000")
 @click.option("--minepoch", "-e", default=10, help="Number of min epoches")
 @click.option("--learningrate", "-lr", default=1e-2, help="Learning rate")
 @click.option("--hidden", "-hidden", default=64, help="dim of hidden layer")
 @click.option("--t_class", "-t", default=0, help="Target class index")
 @click.option("--mode", "-m", default=0, help="0 : normal, 1: best")
-@click.option("--classification", "-c", default="base", help="base, genus, family")
-def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classification):
+@click.option("--cls_type", "-c", default="base", help="base, genus, family")
+@click.option("--category1", "-c1", help="")
+@click.option("--category2", "-c2", help="")
+
+def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,category1,category2):
     load_dotenv()
-    FAST5 = os.environ["FAST5"]
-    cutoff = int(os.environ["CUTOFF"])
-    maxlen = int(os.environ["MAXLEN"])
     cutlen = int(os.environ["CUTLEN"])
-    stride = int(os.environ["STRIDE"])
-    dataset_size = int(os.environ["DATASETSIZE"])
     writer = SummaryWriter("runs/experiment_1")
     load_model = False
+    use_category = (category1,category2)
 
     """
     Dataset preparation
     データセット設定
     """
-    ## 変更不可 .values()の取り出しあり
-    cut_size = {
-        "cutoff": cutoff,
-        "cutlen": cutlen,
-        "maxlen": maxlen,
-        "stride": stride,
-    }
-    pprint.pprint(cut_size, width=1)
     ## fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
     ## id list -> 種の名前に対応した.txtが入ったディレクトリ
-    data = Dataformat(FAST5, dataset_size, cut_size, classification,use_category=("Bacillus","Listeria"))
+    data = Dataformat(cls_type,use_category)
     train_loader, _ = data.loader(batch)
     test_loader = data.test_loader(batch)
     param = data.param()
@@ -70,7 +58,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, classificat
         "heatmap": True,
         "y_label": ylabel,
         "project": "gigascience",
-        "category" : classification,
+        "category" : cls_type,
     }
     pprint.pprint(pref, width=1)
     model, useModel = model_preference(arch, hidden, pref, mode=mode)

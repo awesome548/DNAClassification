@@ -14,21 +14,25 @@ from preference import model_preference
 @click.command()
 @click.option("--arch", "-a", help="Name of Architecture")
 @click.option("--batch", "-b", default=500, help="Batch size, default 1000")
-@click.option("--minepoch", "-e", default=10, help="Number of min epoches")
+@click.option("--minepoch", "-e", default=30, help="Number of min epoches")
 @click.option("--learningrate", "-lr", default=1e-2, help="Learning rate")
 @click.option("--hidden", "-hidden", default=64, help="dim of hidden layer")
 @click.option("--t_class", "-t", default=0, help="Target class index")
 @click.option("--mode", "-m", default=0, help="0 : normal, 1: best")
 @click.option("--cls_type", "-c", default="base", help="base, genus, family")
-@click.option("--category1", "-c1", help="")
-@click.option("--category2", "-c2", help="")
+@click.option("--category1", "-c1", default="n", help="")
+@click.option("--category2", "-c2", default='n', help="")
 
 def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,category1,category2):
     load_dotenv()
     cutlen = int(os.environ["CUTLEN"])
     writer = SummaryWriter("runs/experiment_1")
     load_model = False
-    use_category = (category1,category2)
+    
+    if category1 != "n":
+        use_category = (category1,category2)
+    else:
+        use_category = None
 
     """
     Dataset preparation

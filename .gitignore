@@ -20,6 +20,7 @@ runs/
 test/
 test.py
 test.txt
+train.sh
 test*
 Baseline*/
 Category*/

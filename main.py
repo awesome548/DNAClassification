@@ -6,15 +6,15 @@ import torch
 from dotenv import load_dotenv
 from torch import nn
 from torch.utils.tensorboard import SummaryWriter
-from ops_data.dataformat import Dataformat
-from ops_process import test_loop
-from ops_process import train_loop
+from data_processing.dataformat import Dataformat
+from processing import test_loop
+from processing import train_loop
 from preference import model_preference
 
 @click.command()
 @click.option("--arch", "-a", help="Name of Architecture")
-@click.option("--batch", "-b", default=500, help="Batch size, default 1000")
-@click.option("--minepoch", "-e", default=30, help="Number of min epoches")
+@click.option("--batch", "-b", default=1000, help="Batch size, default 1000")
+@click.option("--minepoch", "-e", default=20, help="Number of min epoches")
 @click.option("--learningrate", "-lr", default=1e-2, help="Learning rate")
 @click.option("--hidden", "-hidden", default=64, help="dim of hidden layer")
 @click.option("--t_class", "-t", default=0, help="Target class index")
@@ -26,7 +26,7 @@ from preference import model_preference
 def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,category1,category2):
     load_dotenv()
     cutlen = int(os.environ["CUTLEN"])
-    writer = SummaryWriter("runs/experiment_1")
+    writer = SummaryWriter("runs/accuracy")
     load_model = False
     
     if category1 != "n":
@@ -59,7 +59,8 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,ca
         "epoch": minepoch,
         "target": t_class,
         "name": arch,
-        "heatmap": True,
+        "confmat": False,
+        "heatmap": False,
         "y_label": ylabel,
         "project": "gigascience",
         "category" : cls_type,
@@ -82,7 +83,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,ca
         "device": device,
     }
     train_loop(models, pref, train_loader, load_model, writer)
-    test_loop(models, pref, test_loader, load_model, writer)
+    test_loop(models, pref, test_loader, load_model, writer,use_category)
 
 
 if __name__ == "__main__":

@@ -67,7 +67,7 @@ class ResNet(nn.Module):
         self.mode = mode
         self.start_time = 0
         self.end_time = 0
-        output_channel = cfgs[-1][0]
+        output_channel = cfgs[3][0]
         self.acc = np.array([]) 
         self.metric = {
             'tp' : 0,
@@ -91,6 +91,7 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, cfgs[1][0], cfgs[1][1], stride=2)
         self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
         self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
+        self.layer5 = self._make_layer(block, cfgs[4][0], cfgs[4][1], stride=2)
         
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
@@ -127,6 +128,7 @@ class ResNet(nn.Module):
 
     def forward(self, x,text="train"):
         x = x.unsqueeze(1)
+        # print(x.size())
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -134,9 +136,15 @@ class ResNet(nn.Module):
             x = self.pool(x)
 
         x = self.layer1(x)
+        # print(x.size())
         x = self.layer2(x)
+        # print(x.size())
         x = self.layer3(x)
+        # print(x.size())
         x = self.layer4(x)
+        # print(x.size())
+        # x = self.layer5(x)
+        # print(x.size())
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -156,7 +164,8 @@ DEFAULT =[
     [20,2],
     [30,2],
     [45,2],
-    [67,2]
+    [67,2],
+    [101,2]
 ]
 
 BESTLAY1 =[
@@ -166,20 +175,46 @@ BESTLAY1 =[
     [21,3],
 ]
 
+DEFAULTCNN = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 3,
+    "padd" : 5,
+}
+TESTCNN0 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 10,
+    "padd" : 5,
+}
+TESTCNN1 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 2,
+    "padd" : 5,
+}
+TESTCNN2 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 1,
+    "padd" : 5,
+}
 BESTCNN = {
     "channel" : 121,
     "kernel" : 19,
     "stride" : 4,
     "padd" : 5,
 }
-def resnet(preference,cnnparam=BESTCNN,mode=0,cfgs=DEFAULT):
+def resnet(preference,cnnparam=DEFAULTCNN,mode=0,cfgs=DEFAULT):
     """
     c : channels
     n : num of layers
     """
     if mode == 0:
-        cfgs = DEFAULT
-    else:
-        cfgs = BESTLAY
+        cnnparam = TESTCNN0
+    elif mode == 1:
+        cnnparam = TESTCNN1
+    elif mode == 2:
+        cnnparam = TESTCNN2
     
     return ResNet(cfgs, cnnparam,mode,preference)

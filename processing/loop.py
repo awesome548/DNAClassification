@@ -2,17 +2,16 @@ import tqdm
 import torch
 import datetime
 import math
-from ops_process import evaluation
+from processing import evaluation
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
-IDLIST = os.environ['IDLIST']
 FAST5 = os.environ['FAST5']
 MODEL = os.environ['MODEL']
 
 ### TRAIN and TEST ###
-def train_loop(models,pref,train_loader,load_model,writer) -> None:
+def train_loop(models,pref,train_loader,load_model,writer=None) -> None:
     epoch = pref["epoch"]
     arch = pref["name"]
     cls = pref["classes"]
@@ -34,14 +33,14 @@ def train_loop(models,pref,train_loader,load_model,writer) -> None:
                 train_loss += loss.item()
 
             cur_loss = train_loss / len(train_loader)
-            writer.add_scalar("Loss/train", cur_loss, epo)
+            #writer.add_scalar("Loss/train", cur_loss, epo)
             print('| epoch {:3d} | loss {:5.2f} | ppl {:8.2f}'.format(epo,cur_loss, math.exp(cur_loss)))
             train_loss = 0
         torch.save(model, f'{MODEL}/{arch}-c{cls}-{datetime.date.today()}.pth')
     else:
         model = torch.load(f'{MODEL}/{arch}-c{cls}-{datetime.date.today()}.pth')
 
-def test_loop(models,pref,test_loader,load_model,writer):
+def test_loop(models,pref,test_loader,load_model,categories,writer=None):
     model, criterion, _, device = models.values()
     n_class = pref["classes"]
     t_class = pref["target"]
@@ -67,4 +66,4 @@ def test_loop(models,pref,test_loader,load_model,writer):
     # y_hat_idx = (y_hat_idx == t_class)
     # y = (labels == t_class)
 
-    evaluation(y_hat_idx,outputs,labels,n_class,t_class,hidd_vec,labels,pref,load_model,writer)
+    return evaluation(y_hat_idx,outputs,labels,n_class,t_class,hidd_vec,labels,pref,load_model,categories)

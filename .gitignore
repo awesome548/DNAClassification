@@ -15,6 +15,7 @@ misc/
 torch_data/
 tb_logs/
 runs/
+result/
 
 #Wandb model
 test/

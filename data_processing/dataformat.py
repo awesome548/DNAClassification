@@ -2,9 +2,9 @@ import os
 import glob
 import torch
 from torch.utils.data import DataLoader
-from ops_data.dataset import MultiDataset
-from ops_data.datamodule import DataModule
-from ops_data.preprocess import Preprocess,calu_size
+from data_processing.dataset import MultiDataset
+from data_processing.datamodule import DataModule
+from data_processing.preprocess import Preprocess,calu_size
 from dotenv import load_dotenv
 import pprint
 load_dotenv()
@@ -44,7 +44,10 @@ def base_class(fast5_id:list) -> dict:
     return train,val,test,dataset_size
 
 def two_class(fast5_id:list,cat1:str,cat2) -> dict:
+    # データリスト
     d_list = []
+    # ラベルリスト
+    # seabornに保存する用の変数 [*,*,*,*...]
     l_list = []
     i = 0
     for [fast5, out, flag] in fast5_id:
@@ -86,12 +89,13 @@ class Dataformat:
                 flag = False
                 dirname = os.path.abspath(name) + '/fast5'
                 ## IDを作って読み込んでいる場合
-                if os.path.exists(dirname):
-                    flag = True
-                    tmp.append(dirname)
-                ## Torchファイルが直接存在する場合<-初回
-                else:
-                    tmp.append(name)
+                #if os.path.exists(dirname):
+                    #flag = True
+                    #tmp.append(dirname)
+                ### Torchファイルが直接存在する場合<-初回
+                #else:
+                    #tmp.append(name)
+                tmp.append(name)
                 tmp.append(os.path.basename(name))
                 tmp.append(flag)
                 fast5_set.append(tmp)
@@ -120,6 +124,7 @@ class Dataformat:
             captions = l_list
         else:
             captions = MultiDataset.captions
+
         y_label = [None]*(self.classes)
         for spe,cap in zip(fast5_set,captions):
             if not(cap < 0):

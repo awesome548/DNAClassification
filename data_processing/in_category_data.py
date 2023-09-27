@@ -1,7 +1,7 @@
 import torch
 import glob
 from torch.utils.data import DataLoader
-from ops_process import Preprocess,calu_size
+from processing import Preprocess,calu_size
 
 def base_class(idset: list,dataset:list,size:int,cut_size:dict) -> dict:
     cutoff,cutlen,maxlen,stride = cut_size.values()

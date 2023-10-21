@@ -43,7 +43,7 @@ def base_class(fast5_id:list) -> dict:
 
     return train,val,test,dataset_size
 
-def two_class(fast5_id:list,cat1:str,cat2) -> dict:
+def multi_class(fast5_id:list,ctgys:list) -> dict:
     # データリスト
     d_list = []
     # ラベルリスト
@@ -51,13 +51,16 @@ def two_class(fast5_id:list,cat1:str,cat2) -> dict:
     l_list = []
     i = 0
     for [fast5, out, flag] in fast5_id:
-        if (cat1 in fast5) or (cat2 in fast5):
-            pre = Preprocess(fast5,out,flag)
-            d_list.append(pre.process())
-            l_list.append(i)
-            i += 1
-        else:
-            l_list.append(-1)
+        for ctgy in ctgys:
+            if ctgy in fast5:
+                # print(fast5)
+                # print(ctgy)
+                pre = Preprocess(fast5,out,flag)
+                d_list.append(pre.process())
+                l_list.append(i)
+                i += 1
+                break
+        l_list.append(-1)
 
     dataset_size = calu_size()
     assert d_list[0].shape[0] == dataset_size
@@ -75,7 +78,7 @@ def two_class(fast5_id:list,cat1:str,cat2) -> dict:
     return train,val,test,dataset_size, l_list
 
 class Dataformat:
-    def __init__(self,cls_type:str,use_category:tuple=False) -> None:
+    def __init__(self,cls_type:str,use_category:list=False) -> None:
         fast5_set = []
         pprint.pprint(CUTSIZE, width=1)
         """
@@ -107,9 +110,11 @@ class Dataformat:
         # print(fast5_set)
 
         ## 二値分類時との場合わけ
+        ## 多値分類時との場合わけ
+        assert use_category != []
         if use_category:
-            train, val, test, dataset_size, l_list = two_class(fast5_set,*use_category)
-            cls_type = "two_value"
+            train, val, test, dataset_size, l_list = multi_class(fast5_set,use_category)
+            cls_type = "multi_value"
         else:
             train, val, test, dataset_size = base_class(fast5_set)
             l_list = None

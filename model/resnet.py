@@ -67,7 +67,6 @@ class ResNet(nn.Module):
         self.mode = mode
         self.start_time = 0
         self.end_time = 0
-        output_channel = cfgs[3][0]
         self.acc = np.array([]) 
         self.metric = {
             'tp' : 0,
@@ -75,7 +74,6 @@ class ResNet(nn.Module):
             'fn' : 0,
             'tn' : 0,
         }
-        self.cluster = torch.zeros(1,output_channel).cuda()
         ######
 
 		# first block
@@ -88,11 +86,19 @@ class ResNet(nn.Module):
         
         block = Bottleneck
         self.layer1 = self._make_layer(block, cfgs[0][0], cfgs[0][1])
-        self.layer2 = self._make_layer(block, cfgs[1][0], cfgs[1][1], stride=2)
-        self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
-        self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
-        self.layer5 = self._make_layer(block, cfgs[4][0], cfgs[4][1], stride=2)
-        
+        layers = preference['layers']
+        self.layers = layers
+        if layers > 1:
+            self.layer2 = self._make_layer(block, cfgs[1][0], cfgs[1][1], stride=2)
+        if layers > 2:
+            self.layer3 = self._make_layer(block, cfgs[2][0], cfgs[2][1], stride=2)
+        if layers > 3:
+            self.layer4 = self._make_layer(block, cfgs[3][0], cfgs[3][1], stride=2)
+        if layers > 4:
+            self.layer5 = self._make_layer(block, cfgs[4][0], cfgs[4][1], stride=2)
+
+        output_channel = cfgs[layers-1][0]
+        self.cluster = torch.zeros(1,output_channel).cuda()
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc = nn.Linear(output_channel , classes)
 
@@ -137,14 +143,18 @@ class ResNet(nn.Module):
 
         x = self.layer1(x)
         # print(x.size())
-        x = self.layer2(x)
-        # print(x.size())
-        x = self.layer3(x)
-        # print(x.size())
-        x = self.layer4(x)
-        # print(x.size())
-        # x = self.layer5(x)
-        # print(x.size())
+        if self.layers > 1:
+            x = self.layer2(x)
+            # print(x.size())
+        if self.layers > 2:
+            x = self.layer3(x)
+            # print(x.size())
+        if self.layers > 3:
+            x = self.layer4(x)
+            # print(x.size())
+        if self.layers > 4:
+            x = self.layer5(x)
+            # print(x.size())
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -181,19 +191,43 @@ DEFAULTCNN = {
     "stride" : 3,
     "padd" : 5,
 }
-TESTCNN0 = {
+STRIDE12 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 12,
+    "padd" : 5,
+}
+STRIDE10 = {
     "channel" : 20,
     "kernel" : 19,
     "stride" : 10,
     "padd" : 5,
 }
-TESTCNN1 = {
+STRIDE9 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 9,
+    "padd" : 5,
+}
+STRIDE8 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 8,
+    "padd" : 5,
+}
+STRIDE5 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 5,
+    "padd" : 5,
+}
+STRIDE2 = {
     "channel" : 20,
     "kernel" : 19,
     "stride" : 2,
     "padd" : 5,
 }
-TESTCNN2 = {
+STRIDE1 = {
     "channel" : 20,
     "kernel" : 19,
     "stride" : 1,
@@ -211,10 +245,15 @@ def resnet(preference,cnnparam=DEFAULTCNN,mode=0,cfgs=DEFAULT):
     n : num of layers
     """
     if mode == 0:
-        cnnparam = TESTCNN0
+        cnnparam = STRIDE12
     elif mode == 1:
-        cnnparam = TESTCNN1
+        cnnparam = STRIDE9
     elif mode == 2:
-        cnnparam = TESTCNN2
-    
+        cnnparam = STRIDE2
+    elif mode == 3:
+        cnnparam = STRIDE1
+    elif mode == 4:
+        cnnparam = STRIDE8
+    print(cnnparam)
+    print(f'output channel :{cfgs[preference["layers"]-1][0]}')
     return ResNet(cfgs, cnnparam,mode,preference)

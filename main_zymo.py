@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import pprint
 import click
 import csv
@@ -14,16 +14,22 @@ from processing import train_loop
 from preference import model_preference
 
 @click.command()
+## --- frequently change
 @click.option("--arch", "-a",default="ResNet" ,help="Name of Architecture")
+@click.option("--mode", "-m", default=0, help="0 : normal, 1: best")
+@click.option("--reps", "-r", default=5, help="training reps")
+## --- rarely change
 @click.option("--batch", "-b", default=1000, help="Batch size, default 1000")
 @click.option("--minepoch", "-e", default=20, help="Number of min epoches")
 @click.option("--learningrate", "-lr", default=1e-2, help="Learning rate")
 @click.option("--hidden", "-hidden", default=64, help="dim of hidden layer")
 @click.option("--t_class", "-t", default=0, help="Target class index")
-@click.option("--mode", "-m", default=0, help="0 : normal, 1: best")
 @click.option("--cls_type", "-c", default="base", help="base, genus, family")
+@click.option("--project", "-p", default="base", help="base, genus, family")
+@click.option("--layers", "-l", default=4, help="")
 
-def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
+def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,reps,project,layers):
+    # print(torch.cuda.device_count())
     load_dotenv()
     cutlen = int(os.environ["CUTLEN"])
     FAST5 = os.environ["FAST5"]
@@ -44,7 +50,6 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
     ## ファイルの順番がわからなくなるためソート
     fast5_set.sort()
     # print(fast5_set)
-    reps = 1
     result = np.zeros((len(fast5_set)-1,len(fast5_set)))
 
     for idx, category1 in enumerate(fast5_set):
@@ -55,7 +60,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
             use_category = (category1,category2)
 
             tmp_result = []
-            for rep in range(reps):
+            for rep in range(int(reps)):
                 print(use_category)
                 """
                 Dataset preparation
@@ -74,10 +79,6 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
                 Model設定
                 """
                 ## 変更不可 .values()の取り出しあり metrics.py
-                if mode == 0:
-                    project = "mode0"
-                elif mode == 2:
-                    project = "mode2"
                 pref = {
                     "data_size": datasize,
                     "lr": learningrate,
@@ -91,6 +92,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
                     "y_label": ylabel,
                     "project": project,
                     "category" : cls_type,
+                    "layers" : layers,
                 }
                 pprint.pprint(pref, width=1)
                 model, useModel = model_preference(arch, hidden, pref, mode=mode)
@@ -111,11 +113,16 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type):
                 }
                 train_loop(models, pref, train_loader, load_model)
                 acc = test_loop(models, pref, test_loader, load_model, use_category)
-                print(acc)
                 tmp_result.append(acc)
+                if not os.path.isdir(f'result/{project}'):
+                    os.makedirs(f'result/{project}')
+                filename = f'result/{project}/{category1}_{category2}.txt'
+                # テキストファイルにaccuracyを書き込む
+                with open(filename, 'a') as f:
+                    f.write(f"{acc}\n")
 
             assert reps == len(tmp_result) 
-            result[int(idx)][int(idx2)] = sum(tmp_result)/int(reps)
+            result[idx][idx2] = sum(tmp_result)/int(reps)
 
     print(result)
     headers = [""] + fast5_set

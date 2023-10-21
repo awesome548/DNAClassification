@@ -34,16 +34,12 @@ def evaluation(y_hat_idx,y_hat,y,n_class,target,hidd_vec,labels,pref,load_model,
     # writer.add_scalar("Metric/precision",preci(y_hat_idx,y))
     # writer.add_scalar("Metric/precision_tar",preci1(y_hat_idx,y)[target])
 
-    _,_,cutlen,n_class,epoch,target,name,confmat,heatmap,ylabel,project,category = pref.values()
+    cutlen, n_class = pref['cutlen'], pref['classes']
+    epoch,name,project,category = pref['epoch'], pref['name'], pref['project'], pref['category'] 
+    confmat,heatmap = pref['confmat'], pref['heatmap']
+    ylabel = pref['y_label']
 
-    ## --- TEXT FILE
     accuracy = acc(y_hat_idx,y)
-    if not os.path.isdir(f'result/{project}'):
-        os.makedirs(f'result/{project}')
-    filename = f'result/{project}/{categories[0]}_{categories[1]}.txt'
-    # テキストファイルにaccuracyを書き込む
-    with open(filename, 'a') as f:
-        f.write(f"{accuracy}\n")
 
     ## --- CONFUSION MATRIX 
     if confmat:

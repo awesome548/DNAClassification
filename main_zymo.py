@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import pprint
 import click
 import csv
@@ -16,7 +16,7 @@ from preference import model_preference
 @click.command()
 ## --- frequently change
 @click.option("--arch", "-a",default="ResNet" ,help="Name of Architecture")
-@click.option("--mode", "-m", default=0, help="0 : normal, 1: best")
+@click.option("--mode", "-m", default=1, help="0,1,2,3 : CNN kernel order,family : dataset categorization")
 @click.option("--reps", "-r", default=5, help="training reps")
 ## --- rarely change
 @click.option("--batch", "-b", default=1000, help="Batch size, default 1000")

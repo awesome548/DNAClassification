@@ -18,7 +18,7 @@ def train_loop(models,pref,train_loader,load_model,writer=None) -> None:
     model,criterion,optimizer,device = models.values()
 
     if not load_model:
-        print("#######Train Start...")
+        print("##### TRAINING #####")
         print(f'Epoch :{epoch}, Train Data Size :{train_loader.dataset.data.shape}')
         for epo in (range(epoch)):
             model.train()

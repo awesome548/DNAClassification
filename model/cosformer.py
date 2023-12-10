@@ -49,8 +49,6 @@ class Transformer_clf_model(nn.Module):
 
         self.linear = nn.Linear(model_args['d_model'], classes)
 
-        self.save_hyperparameters()
-
     def forward(self, x, attention_mask=None, lengths=None,text=None):
         x = x.unsqueeze(1)
         x = self.conv(x)
@@ -72,6 +70,12 @@ BEST = {
     "channel" : 112,
     "kernel" : 17,
     "stride" : 5,
+    "padd" : 5,
+}
+DEFAULTCNN = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 3,
     "padd" : 5,
 }
 def cosformer(preference,args,cnnparam=BEST):

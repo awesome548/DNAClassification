@@ -188,14 +188,14 @@ class EffNetV2(nn.Module):
                 m.weight.data.normal_(0, 0.001)
                 m.bias.data.zero_()
 
-CFGS =[
+CFGS1 =[
     # t, c, n, s, SE
     [1,  24,  2, 1, 0],
-    [4,  48,  4, 2, 0],
-    [4,  64,  4, 2, 0],
-    [4, 128,  4, 2, 1],
-    [6, 160,  4, 1, 1],
-    [6, 256,  4, 2, 1],
+    [4,  48,  2, 2, 0],
+    [4,  64,  2, 2, 0],
+    [4, 128,  2, 2, 1],
+    [6, 160,  2, 1, 1],
+    [6, 256,  2, 2, 1],
 ]
 CFGS2 =[
     # t, c, n, s, SE
@@ -206,6 +206,12 @@ CFGS2 =[
     [6, 160,  6, 1, 1],
     [6, 256,  6, 2, 1],
 ]
+DEFAULTCNN = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 3,
+    "padd" : 5,
+}
 BEST1 = {
     "channel" : 128,
     "kernel" : 23,
@@ -219,11 +225,7 @@ BEST2 = {
     "padd" : 4,
 }
 
-def effnetv2_s(mode,preference,convparam=BEST1,cfgs=CFGS2,**kwargs):
-    if mode==0:
-        convparam = BEST1
-    elif mode == 1:
-        convparam = BEST2
+def effnetv2_s(mode,preference,convparam=DEFAULTCNN,cfgs=CFGS1,**kwargs):
     """
     Constructs a EfficientNetV2-S model
     t : expand ratio

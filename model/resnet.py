@@ -197,6 +197,12 @@ STRIDE12 = {
     "stride" : 12,
     "padd" : 5,
 }
+STRIDE11 = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 11,
+    "padd" : 5,
+}
 STRIDE10 = {
     "channel" : 20,
     "kernel" : 19,
@@ -245,15 +251,18 @@ def resnet(preference,cnnparam=DEFAULTCNN,mode=0,cfgs=DEFAULT):
     n : num of layers
     """
     if mode == 0:
-        cnnparam = STRIDE12
+        cnnparam = STRIDE11
     elif mode == 1:
-        cnnparam = STRIDE9
+        cnnparam = STRIDE10
     elif mode == 2:
         cnnparam = STRIDE2
     elif mode == 3:
         cnnparam = STRIDE1
     elif mode == 4:
         cnnparam = STRIDE8
+    else:
+        cnnparam = DEFAULTCNN
+    print("##### CNN SETTINGS #####")
     print(cnnparam)
     print(f'output channel :{cfgs[preference["layers"]-1][0]}')
     return ResNet(cfgs, cnnparam,mode,preference)

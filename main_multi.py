@@ -81,7 +81,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
             ## id list -> 種の名前に対応した.txtが入ったディレクトリ
             print("##### DATA PREPARATION #####")
             data = Dataformat(cls_type,use_category)
-            train_loader, _ = data.loader(batch)
+            train_loader, val_loader = data.loader(batch)
             test_loader = data.test_loader(batch)
             param = data.param()
             datasize, classes, ylabel = param["size"], param["num_cls"], param["ylabel"]
@@ -124,7 +124,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
                 "optimizer": torch.optim.Adam(model.parameters(), lr=learningrate),
                 "device": device,
             }
-            train_loop(models, pref, train_loader, load_model)
+            train_loop(models, pref, train_loader, val_loader, load_model)
             acc = test_loop(models, pref, test_loader, load_model, use_category)
             tmp_result.append(acc)
 

@@ -9,8 +9,7 @@ import glob
 from dotenv import load_dotenv
 from torch import nn
 from data_processing.dataformat import Dataformat
-from processing import test_loop
-from processing import train_loop
+from processing import test_loop, train_loop
 from preference import model_preference
 
 @click.command()
@@ -69,7 +68,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
                 ## fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
                 ## id list -> 種の名前に対応した.txtが入ったディレクトリ
                 data = Dataformat(cls_type,use_category)
-                train_loader, _ = data.loader(batch)
+                train_loader, val_loader = data.loader(batch)
                 test_loader = data.test_loader(batch)
                 param = data.param()
                 datasize, classes, ylabel = param["size"], param["num_cls"], param["ylabel"]
@@ -95,7 +94,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
                     "layers" : layers,
                 }
                 pprint.pprint(pref, width=1)
-                model, useModel = model_preference(arch, hidden, pref, mode=mode)
+                model, _ = model_preference(arch, hidden, pref, mode=mode)
                 """
                 Training
                 """
@@ -111,7 +110,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
                     "optimizer": torch.optim.Adam(model.parameters(), lr=learningrate),
                     "device": device,
                 }
-                train_loop(models, pref, train_loader, load_model)
+                train_loop(models, pref, train_loader, val_loader, load_model)
                 acc = test_loop(models, pref, test_loader, load_model, use_category)
                 tmp_result.append(acc)
                 if not os.path.isdir(f'result/{project}'):

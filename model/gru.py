@@ -56,12 +56,17 @@ class myGRU(nn.Module):
             self.cluster = torch.vstack((self.cluster,output[:,-1,].detach().clone()))
         return y_hat
 
+DEFAULT_CNN = {
+    "channel" : 20,
+    "kernel" : 19,
+    "stride" : 3,
+    "padd" : 5,
+}
 BEST = {
     "channel" : 90,
     "kernel" : 15,
     "stride" : 2,
     "padd" : 3,
 }
-def gru(preference,param,cnnparam=BEST):
-
+def gru(preference,param,cnnparam=DEFAULT_CNN):
     return myGRU(preference=preference,cnn_params=cnnparam,**param)

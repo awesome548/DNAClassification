@@ -20,7 +20,7 @@ def model_parameter(flag,hidden):
         ##LSTM
         model_params = {
             'hiddenDim' : hidden,
-            'bidirect' : False,
+            'bidirect' : True,
         }
     elif flag == 1:
         ##transformer
@@ -50,13 +50,13 @@ def model_parameter(flag,hidden):
     return model_params
 
 
-def model_preference(arch,hidden,pref,mode=0,cnn_params=None,cfgs=None):
+def model_preference(arch,hidden,pref,mode=0):
     ### no CNN PARAM -> best CNN
     if "GRU" in str(arch):
         params = model_parameter(0,hidden)
         model = gru(param=params,preference=pref)
     elif "ResNet" in str(arch):
-        model = resnet(cnnparam=DEFAULT_CNN,mode=mode,preference=pref)
+        model = resnet(mode=mode,preference=pref)
     elif "Transformer" in str(arch):
         params = model_parameter(2,hidden)
         model = cosformer(preference=pref,args=params)

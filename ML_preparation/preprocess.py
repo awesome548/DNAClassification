@@ -5,7 +5,7 @@ import random
 import numpy as np
 from ont_fast5_api.fast5_interface import get_fast5_file
 from ML_processing import plot_torch_1d
-from ML_preparation.utils import mad_normalization
+from utils import mad_normalization
 from dotenv import load_dotenv
 load_dotenv()
 FAST5 = os.environ["FAST5"]

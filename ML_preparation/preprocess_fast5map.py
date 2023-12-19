@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 from dotenv import load_dotenv
 import csv
-from ML_preparation.utils import parse_paf_idx,map_position
+from utils import parse_paf_idx,map_position
 load_dotenv()
 MISC = os.environ["MISC"]
 def main():

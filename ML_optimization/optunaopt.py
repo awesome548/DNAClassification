@@ -1,16 +1,14 @@
 import torch
 import torch.nn  as nn
 import time
-from dataset.dataformat import Dataformat
-from preference import model_preference,data_preference,model_parameter
+from ML_dataset import Dataformat
+from ML_model.preference import model_preference,data_preference,model_parameter
 from ML_model import LSTM,resnet,SimpleViT,ViT,ViT2,SimpleViT2,Transformer_clf_model,GRU
 from optuna.trial import TrialState
 import torch.utils.data
 import optuna 
-from dataset.dataformat import Dataformat
 from ML_model import resnet,effnetv2_s
-import wandb
-from optim.utils import resnet_param,effnet_param
+from ML_optimization.utils import resnet_param,effnet_param
 
 
 ### TRAIN and TEST ###

@@ -1,8 +1,8 @@
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from dataset.dataformat import Dataformat
-from preference import model_preference,data_preference,model_parameter,logger_preference
+from ML_dataset import Dataformat
+from ML_model.preference import model_preference,data_preference,model_parameter,logger_preference
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 

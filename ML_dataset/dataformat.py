@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from ML_dataset.dataset import MultiDataset
 from ML_dataset.datamodule import DataModule
-from ML_preparation import Preprocess,calu_size
+from ML_preparation.preprocess import Preprocess,calu_size
 from dotenv import load_dotenv
 import pprint
 load_dotenv()

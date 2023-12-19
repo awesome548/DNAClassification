@@ -5,7 +5,7 @@ import numpy as np
 from ont_fast5_api.fast5_interface import get_fast5_file
 import glob
 from dotenv import load_dotenv
-from ML_preparation.utils import parse_paf,mad_normalization
+from utils import parse_paf,mad_normalization
 
 def main():
     load_dotenv()

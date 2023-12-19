@@ -3,10 +3,9 @@ import torch
 from scipy import stats
 import numpy as np
 from ont_fast5_api.fast5_interface import get_fast5_file
-import argparse
 import glob
-from preprocess import mad_normalization
 from dotenv import load_dotenv
+from ML_preparation.utils import parse_paf,mad_normalization
 
 def main():
     load_dotenv()
@@ -40,19 +39,10 @@ def main():
     DATA = os.environ['DATA']
     maxlen = int(os.environ['MAXLEN'])
 
-    def parse_paf(infile):
-        infile = open(infile)
-        past = ""
-        for l in infile:
-            if not l.startswith("@"):
-                tabs = l.split()
-                if (tabs[0] != past) and (tabs[2] != "*"):
-                    MAPPED[tabs[0]] = tabs[2].split("_")[0]
-                    past = tabs[0]
 
     ### Loading PAF File
     print("loading paf....")
-    parse_paf(PAF)
+    MAPPED = parse_paf(PAF,MAPPED)
     print("paf loaded!!")
     count = 0
     for fileNM in glob.glob('/z/nanopore/Zymo-GridION-EVEN-BB-SN-PCR-R10HC_multi/batch_*.fast5'):

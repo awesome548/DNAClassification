@@ -8,9 +8,9 @@ import torch
 import glob
 from dotenv import load_dotenv
 from torch import nn
-from data_processing.dataformat import Dataformat
-from processing import test_loop, train_loop
-from preference import model_preference
+from ML_dataset import Dataformat
+from ML_processing import test_loop, train_loop
+from ML_model import model_preference
 
 @click.command()
 ## --- frequently change

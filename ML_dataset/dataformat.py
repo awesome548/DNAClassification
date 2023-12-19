@@ -2,9 +2,9 @@ import os
 import glob
 import torch
 from torch.utils.data import DataLoader
-from data_processing.dataset import MultiDataset
-from data_processing.datamodule import DataModule
-from data_processing.preprocess import Preprocess,calu_size
+from ML_dataset.dataset import MultiDataset
+from ML_dataset.datamodule import DataModule
+from ML_preparation import Preprocess,calu_size
 from dotenv import load_dotenv
 import pprint
 load_dotenv()

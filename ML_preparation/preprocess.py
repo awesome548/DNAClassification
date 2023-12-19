@@ -3,11 +3,10 @@ import glob
 import torch
 import random
 import numpy as np
-from scipy import stats
 from ont_fast5_api.fast5_interface import get_fast5_file
+from ML_processing import plot_torch_1d
+from ML_preparation.utils import mad_normalization
 from dotenv import load_dotenv
-from dotenv import load_dotenv
-import pprint
 load_dotenv()
 FAST5 = os.environ["FAST5"]
 DATASIZE = int(os.environ["DATASETSIZE"])
@@ -16,25 +15,6 @@ MAXLEN = int(os.environ["MAXLEN"])
 CUTLEN = int(os.environ["CUTLEN"])
 DATAPATH = os.environ['DATAPATH']
 STRIDE = int(os.environ["STRIDE"])
-
-def mad_normalization(data_test,filepath):
-    mad = stats.median_abs_deviation(data_test, axis=1, scale='normal')
-    m = np.median(data_test, axis=1)   
-    data_test = ((data_test - np.expand_dims(m,axis=1))*1.0) / (1.4826 * np.expand_dims(mad,axis=1))
-    x = np.where(np.abs(data_test) > 3.5)
-    for i in range(x[0].shape[0]):
-        if x[1][i] == 0:
-            data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]+1]
-        elif x[1][i] == (MAXLEN-1):
-            data_test[x[0][i],x[1][i]] = data_test[x[0][i],x[1][i]-1]
-        else:
-            data_test[x[0][i],x[1][i]] = (data_test[x[0][i],x[1][i]-1] + data_test[x[0][i],x[1][i]+1])/2
-    data_test = torch.from_numpy(data_test.astype(np.float32)).clone()
-    print(f'saved torch file size : {data_test.shape}')
-    torch.save(data_test,filepath)
-    print(f'file saved to : {filepath}')
-    return data_test
-
     
 def manipulate(x):
     num = calu_ratio()
@@ -44,6 +24,7 @@ def manipulate(x):
         start = STRIDE*index
         data[index::num,:] = x[:DATASIZE,start:start+CUTLEN]
     print(f'shaped torch size : {data.shape}')
+    plot_torch_1d(data[0,0:1000],0)
     return data
     """
     データ正規化確認

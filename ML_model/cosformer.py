@@ -1,4 +1,4 @@
-from model import Kernel_transformer 
+from ML_model import Kernel_transformer 
 import torch
 import torch.nn as nn
 import numpy as np
@@ -78,6 +78,6 @@ DEFAULTCNN = {
     "stride" : 3,
     "padd" : 5,
 }
-def cosformer(preference,args,cnnparam=BEST):
+def cosformer(preference,args,cnnparam=DEFAULTCNN):
     assert cnnparam["channel"] == args["d_model"]
     return Transformer_clf_model(model_type='kernel',model_args=args,preference=preference,cnn_params=cnnparam)

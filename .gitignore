@@ -4,28 +4,18 @@ __pycache__/
 myenv/
 
 #general directory
-logs/
+Log/
+Data/
 wandb/
 Heatmap/
-Fastq/
-model_log/
-Bthesis_log/
-Confusion_matrix/
 misc/
 torch_data/
-tb_logs/
-runs/
-result/
+Result/
 
 #Wandb model
-test/
 test.py
 test.txt
-train.sh
 test*
-Baseline*/
-Category*/
-IPSJ/
-Bthesis/
-2Stage-Analysis/
+
+
 

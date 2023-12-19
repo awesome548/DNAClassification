@@ -1,6 +1,6 @@
 import math
-from model.mha_block import MHA_block, MHA_block_rezero
-from model.utils import Positional_embeddings
+from ML_model.mha_block import MHA_block, MHA_block_rezero
+from ML_model.utils import Positional_embeddings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

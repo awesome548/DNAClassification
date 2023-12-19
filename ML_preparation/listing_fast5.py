@@ -1,8 +1,6 @@
 import os
 from os.path import abspath
 import glob
-import click
-from ops_data.dataformat import Dataformat
 from ont_fast5_api.fast5_interface import get_fast5_file
 from dotenv import load_dotenv
 

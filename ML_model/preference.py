@@ -1,4 +1,4 @@
-from model import LSTM,resnet,effnetv2_s,gru,cosformer
+from ML_model import LSTM,resnet,effnetv2_s,gru,cosformer
 
 DEFAULT_CNN = {
     "channel" : 20,

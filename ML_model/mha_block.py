@@ -1,4 +1,4 @@
-from model.mha import MHA
+from ML_model.mha import MHA
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -3,9 +3,17 @@ import torch
 import numpy as np
 import os
 from dotenv import load_dotenv
+from ML_preparation.plot import plot_torch_1d
+
+load_dotenv()
 load_dotenv()
 FAST5 = os.environ["FAST5"]
+DATASIZE = int(os.environ["DATASETSIZE"])
+CUTOFF = int(os.environ["CUTOFF"])
 MAXLEN = int(os.environ["MAXLEN"])
+CUTLEN = int(os.environ["CUTLEN"])
+DATAPATH = os.environ['DATAPATH']
+STRIDE = int(os.environ["STRIDE"])
 
 ####################
 ## 
@@ -31,6 +39,32 @@ def mad_normalization(np_array,output_filepath):
     print(f'file saved to : {output_filepath}')
     return norm_data
 
+def calu_ratio():
+    return (MAXLEN - CUTLEN)//STRIDE + 1 
+
+def calu_size():
+    return ((MAXLEN - CUTLEN)//STRIDE + 1)*DATASIZE
+
+def manipulate(x):
+    num = calu_ratio()
+    data = torch.zeros(DATASIZE*num,CUTLEN)
+    ## start point is already cutoff point ###
+    for index in range(num):
+        start = STRIDE*index
+        data[index::num,:] = x[:DATASIZE,start:start+CUTLEN]
+    print(f'shaped torch size : {data.shape}')
+    #plot_torch_1d(data[0,0:1000],0)
+    return data
+    """
+    データ正規化確認
+    print(torch.max(data))
+    print(torch.min(data))
+    data = data.cpu().detach().numpy().copy()
+    data = stats.zscore(data,axis=1,ddof=1)
+    print(np.max(data))
+    print(np.min(data))
+    data = torch.from_numpy(data.astype(np.int32)).clone()
+    """
 ####################
 ## 
 ##  PAF FUNCTION

@@ -1,3 +1,3 @@
-from ML_processing.evaluation import evaluation
-from ML_processing.loop import train_loop,test_loop
-from ML_processing.plot import plot_torch_1d
+from ML_processing.test import evaluation,test_loop
+from ML_processing.train import train_loop
+from ML_preparation.plot import plot_torch_1d

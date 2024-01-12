@@ -4,8 +4,7 @@ import torch
 import random
 import numpy as np
 from ont_fast5_api.fast5_interface import get_fast5_file
-from ML_processing import plot_torch_1d
-from utils import mad_normalization
+from ML_preparation.utils import mad_normalization,manipulate
 from dotenv import load_dotenv
 load_dotenv()
 FAST5 = os.environ["FAST5"]
@@ -15,33 +14,6 @@ MAXLEN = int(os.environ["MAXLEN"])
 CUTLEN = int(os.environ["CUTLEN"])
 DATAPATH = os.environ['DATAPATH']
 STRIDE = int(os.environ["STRIDE"])
-    
-def manipulate(x):
-    num = calu_ratio()
-    data = torch.zeros(DATASIZE*num,CUTLEN)
-    ## start point is already cutoff point ###
-    for index in range(num):
-        start = STRIDE*index
-        data[index::num,:] = x[:DATASIZE,start:start+CUTLEN]
-    print(f'shaped torch size : {data.shape}')
-    plot_torch_1d(data[0,0:1000],0)
-    return data
-    """
-    データ正規化確認
-    print(torch.max(data))
-    print(torch.min(data))
-    data = data.cpu().detach().numpy().copy()
-    data = stats.zscore(data,axis=1,ddof=1)
-    print(np.max(data))
-    print(np.min(data))
-    data = torch.from_numpy(data.astype(np.int32)).clone()
-    """
-
-def calu_ratio():
-    return (MAXLEN - CUTLEN)//STRIDE + 1 
-
-def calu_size():
-    return ((MAXLEN - CUTLEN)//STRIDE + 1)*DATASIZE
 
 class Preprocess():
     def __init__(self,fast5,out,flag) -> None:

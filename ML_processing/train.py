@@ -56,30 +56,4 @@ def train_loop(models,pref,train_loader,val_loader,load_model,writer=None) -> No
     else:
         model = torch.load(f'{MODEL}/{arch}-c{cls}-{datetime.date.today()}.pth')
 
-def test_loop(models,pref,test_loader,load_model,categories,writer=None):
-    model, criterion, _, device = models.values()
-    n_class = pref["classes"]
-    t_class = pref["target"]
-    # testing with validation data
-    print("#######Test Start...")
-    print(f'Test Data Size :{test_loader.dataset.data.shape}')
-    model.eval()
-    with torch.no_grad():
-        labels = torch.zeros(1)
-        outputs = torch.zeros(1,n_class)
-        for x, y in test_loader:
-            x, y = x.to(device), y.to(device)
-            y_hat = model(x,text="test")
-            loss = criterion(y_hat,y)
-            labels = torch.hstack((labels,y.clone().detach().cpu()))
-            outputs = torch.vstack((outputs,y_hat.clone().detach().cpu()))
-
-    outputs = outputs[1:,]
-    labels = labels[1:]
-    hidd_vec = model.cluster[1:]
-    pref = model.pref
-    y_hat_idx = outputs.max(dim=1).indices
-    # y_hat_idx = (y_hat_idx == t_class)
-    # y = (labels == t_class)
-
-    return evaluation(y_hat_idx,outputs,labels,n_class,t_class,hidd_vec,labels,pref,load_model,categories)
+    return model

@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import pprint
 import click
 import csv
@@ -8,15 +8,14 @@ import torch
 import glob
 from dotenv import load_dotenv
 from torch import nn
-from ML_dataset import Dataformat
 from ML_processing import test_loop, train_loop
-from ML_model import model_preference
+from utils import data_prep,preference_prep,text_writer
 
 @click.command()
 ## --- frequently change
 @click.option("--arch", "-a",default="ResNet" ,help="Name of Architecture")
 @click.option("--mode", "-m", default=1, help="0,1,2,3 : CNN kernel order,family : dataset categorization")
-@click.option("--reps", "-r", default=5, help="training reps")
+@click.option("--reps", "-r", default=10, help="training reps")
 ## --- rarely change
 @click.option("--batch", "-b", default=1000, help="Batch size, default 1000")
 @click.option("--minepoch", "-e", default=20, help="Number of min epoches")
@@ -24,7 +23,7 @@ from ML_model import model_preference
 @click.option("--hidden", "-hidden", default=64, help="dim of hidden layer")
 @click.option("--t_class", "-t", default=0, help="Target class index")
 @click.option("--cls_type", "-c", default="base", help="base, genus, family")
-@click.option("--project", "-p", default="base", help="base, genus, family")
+@click.option("--project", "-p", default="misc", help="")
 @click.option("--layers", "-l", default=4, help="")
 
 def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,reps,project,layers):
@@ -32,6 +31,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
     load_dotenv()
     cutlen = int(os.environ["CUTLEN"])
     FAST5 = os.environ["FAST5"]
+    RESULT = os.environ["RESULT"]
     load_model = False
     
     fast5_set = []
@@ -46,6 +46,8 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
     else:
         raise FileNotFoundError("ディレクトリがありません")
 
+    if not os.path.isdir(f'{RESULT}/{project}'):
+        os.makedirs(f'{RESULT}/{project}')
     ## ファイルの順番がわからなくなるためソート
     fast5_set.sort()
     # print(fast5_set)
@@ -61,64 +63,24 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
             tmp_result = []
             for rep in range(int(reps)):
                 print(use_category)
-                """
-                Dataset preparation
-                データセット設定
-                """
-                ## fast5 -> 種のフォルダが入っているディレクトリ -> 対応の種のみを入れたディレクトリを使うこと！！
-                ## id list -> 種の名前に対応した.txtが入ったディレクトリ
-                data = Dataformat(cls_type,use_category)
-                train_loader, val_loader = data.loader(batch)
-                test_loader = data.test_loader(batch)
-                param = data.param()
-                datasize, classes, ylabel = param["size"], param["num_cls"], param["ylabel"]
-                print(f"Num of Classes :{classes}")
-                """
-                Preference
-                Model設定
-                """
-                ## 変更不可 .values()の取り出しあり metrics.py
-                pref = {
-                    "data_size": datasize,
-                    "lr": learningrate,
-                    "cutlen": cutlen,
-                    "classes": classes,
-                    "epoch": minepoch,
-                    "target": t_class,
-                    "name": arch,
-                    "confmat": False,
-                    "heatmap": False,
-                    "y_label": ylabel,
-                    "project": project,
-                    "category" : cls_type,
-                    "layers" : layers,
-                }
-                pprint.pprint(pref, width=1)
-                model, _ = model_preference(arch, hidden, pref, mode=mode)
-                """
-                Training
-                """
-                ### Train ###
+                train_loader, val_loader,test_loader, param = data_prep(cls_type,use_category,batch)
+                model, pref = preference_prep(arch,hidden,mode,learningrate,minepoch,t_class,cls_type,project,layers,param)
+
                 if torch.cuda.is_available:
                     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-                ### network, loss functions and optimizer
-                ## 変更不可 .values()の取り出しあり loop.py
                 models = {
                     "model": model.to(device),
                     "criterion": nn.CrossEntropyLoss().to(device),
                     "optimizer": torch.optim.Adam(model.parameters(), lr=learningrate),
                     "device": device,
                 }
-                train_loop(models, pref, train_loader, val_loader, load_model)
+
+                _ = train_loop(models, pref, train_loader, val_loader, load_model)
                 acc = test_loop(models, pref, test_loader, load_model, use_category)
                 tmp_result.append(acc)
-                if not os.path.isdir(f'result/{project}'):
-                    os.makedirs(f'result/{project}')
-                filename = f'result/{project}/{category1}_{category2}.txt'
-                # テキストファイルにaccuracyを書き込む
-                with open(filename, 'a') as f:
-                    f.write(f"{acc}\n")
+                filename = f'{RESULT}/{project}/{category1}_{category2}.txt'
+                text_writer(filename,acc)
 
             assert reps == len(tmp_result) 
             result[idx][idx2] = sum(tmp_result)/int(reps)
@@ -130,7 +92,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
     result = result.tolist()
     for i, row in enumerate(result):
         data_with_headers.append([fast5_set[i]] + row)
-    with open(f'result/{pref["project"]}/result.csv', 'w', newline='') as file:
+    with open(f'{RESULT}/{pref["project"]}/result.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerows(data_with_headers)
 

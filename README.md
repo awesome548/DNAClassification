@@ -8,7 +8,6 @@
 
 ## Implemented Models
 - *ResNet* : [SquiggleNet](https://github.com/welch-lab/SquiggleNet)
-- *RNN* : CNN&LSTM
-- *RNN* : CNN&GRU
+- *RNN* : GRU&LSTM
 - *Transformer* : [ViT,simple-ViT](https://github.com/lucidrains/vit-pytorch#simple-vit)
 - *Transformer* : [Cosformer](https://github.com/davidsvy/cosformer-pytorch)

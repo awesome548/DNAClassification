@@ -1,57 +1,46 @@
 import torch
-"""
-属 genus、 科 family、目 order、綱 class、門 phylum、界 kingdom、超界 domain
-"""
-def base_data(data):
-      return torch.cat(data)
 
-def base_labels(data,label):
-      label_list = torch.zeros(1)
-      for idx,l in enumerate(label):
-            label_list = torch.hstack((label_list,torch.ones(data[idx].shape[0])*l))
-      return label_list[1:].to(torch.int64)
+# 属 genus、科 family、目 order、綱 class、門 phylum、界 kingdom、超界 domain
 
-def classification(mode,length):
-      if mode == "order":
-            # return [0,1,2,3,3,4]
-            return [0,1,2,3,2,2,2,3,1,0,2,1]
-      elif mode == "family":
-            # return [0,1,1,1,1,2]
-            return [0,1,2,3,2,2,2,4,5,6,2,8]
-      elif mode == "class":
-            # return [0,1,1,1,1,2]
-            return [0,1,0,1,1,1,1,0,0,1,1,0]
-      else:
-            return [i for i in range(length)]
+# Taxonomy label mappings per classification mode
+TAXONOMY_LABELS: dict[str, list[int]] = {
+    "order":  [0, 1, 2, 3, 2, 2, 2, 3, 1, 0, 2, 1],
+    "family": [0, 1, 2, 3, 2, 2, 2, 4, 5, 6, 2, 8],
+    "class":  [0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0],
+}
+
+
+def _concat_data(data: list[torch.Tensor]) -> torch.Tensor:
+    return torch.cat(data)
+
+
+def _build_labels(data: list[torch.Tensor], label: list[int]) -> torch.Tensor:
+    parts = [
+        torch.full((d.shape[0],), lbl, dtype=torch.int64)
+        for d, lbl in zip(data, label)
+    ]
+    return torch.cat(parts)
+
+
+def classification(mode: str, length: int) -> list[int]:
+    if mode in TAXONOMY_LABELS:
+        return TAXONOMY_LABELS[mode]
+    return list(range(length))
 
 
 class MultiDataset(torch.utils.data.Dataset):
-      captions = None
-      classes = 0
-      # @classmethod
-      # def caption():
-      #       return MultiDataset.captions
-      # @classmethod
-      # def num_class():
-      #       return MultiDataset.classes
+    def __init__(self, data: list[torch.Tensor], mode: str) -> None:
+        label = classification(mode, len(data))
+        if len(label) != len(data):
+            raise IndexError("label size does not match to dataset size")
 
-      def __init__(self, data:list,mode:str):
-            label = classification(mode,len(data))
-            if len(label) != len(data):
-                  raise IndexError("label size does not match to dataset size")
-             
-            self.data = base_data(data)
-            self.label = base_labels(data,label)
+        self.data = _concat_data(data)
+        self.label = _build_labels(data, label)
+        self.captions = label
+        self.num_classes = max(label) + 1
 
-            self.__class__.captions = label
-            self.__class__.classes = max(label)+1
+    def __len__(self) -> int:
+        return len(self.label)
 
-      def __len__(self):
-            return len(self.label)
-
-      def __getitem__(self, index):
-            X = self.data[index]
-            y = self.label[index]
-            return X, y
-
-
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.data[index], self.label[index]

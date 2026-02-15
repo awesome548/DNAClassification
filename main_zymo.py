@@ -66,7 +66,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
                 train_loader, val_loader,test_loader, param = data_prep(cls_type,use_category,batch)
                 model, pref = preference_prep(arch,hidden,mode,learningrate,minepoch,t_class,cls_type,project,layers,param)
 
-                if torch.cuda.is_available:
+                if torch.cuda.is_available():
                     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
                 models = {

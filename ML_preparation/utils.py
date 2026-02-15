@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from ML_preparation.plot import plot_torch_1d
 
 load_dotenv()
-load_dotenv()
 FAST5 = os.environ["FAST5"]
 DATASIZE = int(os.environ["DATASETSIZE"])
 CUTOFF = int(os.environ["CUTOFF"])
@@ -70,42 +69,37 @@ def manipulate(x):
 ##  PAF FUNCTION
 ##
 ####################
-def parse_paf(infile,mapdict):
-    infile = open(infile)
+def parse_paf(infile_path, mapdict):
     past = ""
-    for l in infile:
-        if not l.startswith("@"):
-            tabs = l.split()
-            if (tabs[0] != past) and (tabs[2] != "*"):
-                mapdict[tabs[0]] = tabs[2].split("_")[0]
-                past = tabs[0]
+    with open(infile_path) as infile:
+        for line in infile:
+            if not line.startswith("@"):
+                tabs = line.split()
+                if (tabs[0] != past) and (tabs[2] != "*"):
+                    mapdict[tabs[0]] = tabs[2].split("_")[0]
+                    past = tabs[0]
 
-def parse_paf_idx(pafpath,mapdict):
-    infile = open(pafpath)
-    for l in infile:
-        if not l.startswith("@"):
-            tabs = l.split()
-            if (tabs[2] != "*") and (tabs[1] == "0"):
-                mapdict[tabs[2]].append([tabs[0],int(tabs[3]),int(tabs[3])+len(tabs[9])])
-                """
-                if tabs[1] == "0":
-                    MAPPED[tabs[2]] = (tabs[0],tabs[3],tabs[3]+len(tabs[9]))
-                elif tabs[1] == "16":
-                    MAPPED[tabs[2]] = (tabs[0],tabs[3]-len(tabs[9]),tabs[3])
-                past = tabs[0]
-                """
+
+def parse_paf_idx(pafpath, mapdict):
+    with open(pafpath) as infile:
+        for line in infile:
+            if not line.startswith("@"):
+                tabs = line.split()
+                if (tabs[2] != "*") and (tabs[1] == "0"):
+                    mapdict[tabs[2]].append([tabs[0], int(tabs[3]), int(tabs[3]) + len(tabs[9])])
     return mapdict
 
+
 def map_position(mapdict):
-    #print(MAPPED)
     overlap_sum = []
     for array in mapdict.values():
         if len(array) != 0:
             pairs = find_overlapping_pairs_optimized(array)
-            if pairs != []:
+            if pairs:
                 overlap_sum.append(pairs)
-    
     return overlap_sum
+
+
 def find_overlapping_pairs_optimized(array):
     seen = {}
     overlapping_pairs = []

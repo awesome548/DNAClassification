@@ -1,18 +1,19 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-import os
-import pprint
-import click
-import numpy as np
-import torch
-import glob
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 import datetime
+import glob
+import pprint
+
+import click
+import torch
 from dotenv import load_dotenv
 from torch import nn
-from torch.utils.tensorboard import SummaryWriter
+
 from ML_dataset import Dataformat
-from ML_processing import test_loop, train_loop
 from ML_model import model_preference
+from ML_processing import train_loop
 
 @click.command()
 ## --- frequently change
@@ -36,12 +37,6 @@ from ML_model import model_preference
 
 
 def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,reps,project,ctgy1,ctgy2,ctgy3,ctgy4,layers):
-    load_dotenv()
-    cutlen = int(os.environ["CUTLEN"])
-    load_model = False
-    
-
-    # print(torch.cuda.device_count())
     load_dotenv()
     cutlen = int(os.environ["CUTLEN"])
     FAST5 = os.environ["FAST5"]
@@ -112,7 +107,7 @@ def main(arch, batch, minepoch, learningrate, hidden, t_class, mode, cls_type,re
             Training
             """
             ### Train ###
-            if torch.cuda.is_available:
+            if torch.cuda.is_available():
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
             ### network, loss functions and optimizer

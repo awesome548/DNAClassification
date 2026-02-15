@@ -41,11 +41,8 @@
 This repository trains neural networks directly on ONT FAST5-derived current traces, without basecalling first. It provides:
 
 - signal preprocessing with MAD normalization and outlier correction
-- sliding-window signal shaping for fixed-length model input
 - single-stage and category-filtered classification workflows
 - multiple model backbones (CNN/RNN/Transformer variants)
-
-Core training entrypoint: `main.py`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -55,7 +52,33 @@ Nanopore sequencing produces long, noisy electrical signals. Traditional pipelin
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Implemented Models
+
+The benchmark protocol in `main.py` performs supervised multi-class learning under configurable taxonomic granularity (`--cls_type`: `base`, `genus`, `family`).
+Training objective: categorical cross-entropy optimized with Adam.
+
+| Family | Implementations | Inductive Bias / Rationale | Source File(s) |
+|---|---|---|---|
+| Convolutional Networks | `ResNet`, `Effnet` (EfficientNetV2 variant) | Local receptive fields and hierarchical composition for robust motif extraction from noisy current traces. | `ML_model/resnet.py`, `ML_model/effnetv2.py` |
+| Recurrent Networks | `GRU`, `LSTM` | Explicit temporal state propagation for sequential dependency modeling across signal windows. | `ML_model/gru.py`, `ML_model/lstm.py` |
+| Transformer-style Networks | `Transformer` (Cosformer-based classifier) | Long-range interaction modeling with linear-attention style efficiency in 1D sequence settings. | `ML_model/cosformer.py`, `ML_model/vit.py` |
+
+Architecture dispatch is centralized in `ML_model/preference.py`, enabling controlled backbone substitution under a consistent training/evaluation interface.
+
+### Methodological References
+
+- `ResNet`: [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)
+- `EfficientNet`: [EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks](https://arxiv.org/abs/1905.11946)
+- `LSTM`: [Long Short-Term Memory](https://ieeexplore.ieee.org/document/6795963)
+- `GRU`: [Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation](https://arxiv.org/abs/1406.1078)
+- `Cosformer`: [cosFormer: Rethinking Softmax In Attention](https://arxiv.org/abs/2202.08791)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
 ## Architecture
+
+The system is organized as a staged signal-learning pipeline with explicit separation between preprocessing, dataset construction, model definition, and optimization. This layout supports controlled backbone comparison under a common data interface and training protocol.
 
 ### Directory Layout
 
@@ -85,12 +108,22 @@ DNAClassification/
 
 ```text
 FAST5 directories
-  -> ML_preparation.preprocess (normalization + filtering)
-  -> ML_dataset.dataformat (train/val/test DataLoader)
-  -> ML_model.preference (select architecture)
-  -> ML_processing.train.train_loop (fit + validate)
-  -> saved model (.pth) and metric logs
+  -> ML_preparation.preprocess (length filtering, MAD normalization, windowing)
+  -> ML_dataset.dataformat (MultiDataset construction, class mapping, train/val/test loaders)
+  -> ML_model.preference (architecture dispatch by --arch)
+  -> ML_processing.train.train_loop (optimization and validation)
+  -> model checkpoint serialization (.pth)
 ```
+
+### Functional Decomposition
+
+| Stage | Primary Module(s) | Responsibility |
+|---|---|---|
+| Signal preprocessing | `ML_preparation/preprocess.py`, `ML_preparation/utils.py` | Read raw FAST5 traces, enforce length constraints, normalize signals, and construct fixed-length sliding windows. |
+| Dataset assembly | `ML_dataset/dataformat.py`, `ML_dataset/dataset.py` | Build label-aligned tensors and deterministic train/val/test partitions for classification tasks. |
+| Model instantiation | `ML_model/preference.py` + backbone modules | Provide a uniform constructor path for CNN, RNN, and transformer-style classifiers. |
+| Optimization loop | `ML_processing/train.py` | Execute epoch-wise supervised optimization (CrossEntropy + Adam) and validation reporting. |
+| Evaluation/inference | `inference.py` | Run two-stage prediction and class-wise metric logging for downstream analysis. |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -200,14 +233,6 @@ python inference.py
 ```
 
 Note: `inference.py` currently contains hardcoded checkpoint and dataset paths. Update those paths before execution.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## Implemented Models
-
-- CNN: ResNet, EfficientNetV2
-- RNN: GRU, LSTM
-- Transformer-family: Cosformer-based classifier
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
